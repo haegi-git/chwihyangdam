@@ -35,6 +35,7 @@ export default function HomePage() {
           <br />
           작은 자리, 취향담
         </h1>
+        <span aria-hidden="true" className="quiet-rule rise-in rise-in-1" />
         <p className="rise-in rise-in-2 mt-7 max-w-2xl text-lg leading-8 text-ink-soft">
           잘 드러내지 않는 취미를 모아 두고, 일기는 기본적으로 혼자 봅니다.
           가까운 친구와 나누는 일은 서두르지 않고 나중에 이어집니다.

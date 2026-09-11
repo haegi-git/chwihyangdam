@@ -11,12 +11,13 @@ export default function FriendsPage() {
       <h1 className="rise-in rise-in-1 mt-3 font-serif text-3xl tracking-tight text-ink md:text-4xl">
         친구
       </h1>
+      <span aria-hidden="true" className="quiet-rule rise-in rise-in-1" />
       <p className="rise-in rise-in-2 mt-5 leading-8 text-ink-soft">
         가까운 이와 일기를 나누는 자리는 아직 비어 있습니다. 인증과 저장소가
         생긴 뒤에, 내가 고른 친구에게만 글을 열 수 있게 할 예정입니다.
       </p>
 
-      <section className="soft-card rise-in rise-in-3 mt-12 rounded-[2rem] border-dashed p-10 text-center">
+      <section className="soft-card soft-card-dashed rise-in rise-in-3 mt-12 rounded-[2rem] p-10 text-center">
         <div
           aria-hidden="true"
           className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sage-mist"

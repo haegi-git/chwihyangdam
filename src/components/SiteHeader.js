@@ -41,7 +41,10 @@ export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line/60 bg-paper/72 backdrop-blur-md">
       <div className="mx-auto flex h-[4.25rem] w-full max-w-5xl items-center justify-between px-6 md:px-8">
-        <Link href="/" className="flex items-center gap-2.5 text-ink">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 text-ink transition-opacity duration-500 hover:opacity-80"
+        >
           <span
             aria-hidden="true"
             className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sage-mist text-sage"
@@ -60,9 +63,7 @@ export default function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={`nav-link rounded-full px-4 py-2 text-sm transition-colors duration-500 ${
-                  active
-                    ? "bg-sage-mist/80 text-sage-deep"
-                    : "text-ink-soft hover:bg-paper-deep/70 hover:text-ink"
+                  active ? "text-sage-deep" : "text-ink-soft hover:text-ink"
                 }`}
               >
                 {item.label}

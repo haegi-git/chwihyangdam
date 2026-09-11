@@ -69,6 +69,7 @@ export default function DiaryBoard() {
           <h1 className="rise-in rise-in-1 mt-3 font-serif text-3xl tracking-tight text-ink md:text-4xl">
             나의 일기
           </h1>
+          <span aria-hidden="true" className="quiet-rule rise-in rise-in-1" />
           <p className="rise-in rise-in-2 mt-4 max-w-xl leading-8 text-ink-soft">
             적어 둔 글은 나만 봅니다. 가까운 친구와 나누는 기능은 나중에 이어질
             예정입니다.

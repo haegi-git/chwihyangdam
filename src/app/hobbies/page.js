@@ -12,6 +12,7 @@ export default function HobbiesPage() {
       <h1 className="rise-in rise-in-1 mt-3 font-serif text-3xl tracking-tight text-ink md:text-4xl">
         취미
       </h1>
+      <span aria-hidden="true" className="quiet-rule rise-in rise-in-1" />
       <p className="rise-in rise-in-2 mt-5 max-w-2xl leading-8 text-ink-soft">
         크게 떠들지 않아도 좋은 취향들입니다. 지금은 목 데이터로 자리를 채워
         두었고, 나중에 커뮤니티와 연결됩니다.
