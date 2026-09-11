@@ -63,31 +63,35 @@ export default function DiaryBoard() {
 
   return (
     <div>
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow rise-in">비공개</p>
-          <h1 className="rise-in rise-in-1 mt-3 font-serif text-3xl tracking-tight text-ink md:text-4xl">
-            나의 일기
-          </h1>
-          <p className="rise-in rise-in-2 mt-4 max-w-xl leading-8 text-ink-soft">
-            적어 둔 글은 나만 봅니다. 가까운 친구와 나누는 기능은 나중에 이어질
-            예정입니다.
-          </p>
+      <div className="border-b border-line/80 pb-10">
+        <div className="flex items-center justify-between gap-4">
+          <p className="kicker rise-in">비공개</p>
+          <button
+            type="button"
+            onClick={openComposer}
+            className="btn-quiet rise-in rise-in-2 shrink-0 whitespace-nowrap"
+          >
+            새 일기
+          </button>
         </div>
-        <button type="button" onClick={openComposer} className="btn-quiet rise-in rise-in-2">
-          새 일기
-        </button>
+        <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">
+          나의 일기
+        </h1>
+        <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
+          적어 둔 글은 나만 봅니다. 가까운 친구와 나누는 기능은 나중에 이어질
+          예정입니다.
+        </p>
       </div>
 
       {composing ? (
         <form
           onSubmit={handleSubmit}
-          className="soft-card rise-in mt-10 rounded-[1.85rem] p-7"
+          className="paper-sheet journal-entry rise-in mt-10 rounded-[1.85rem] p-7 md:p-8"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-serif text-xl text-ink">새 일기</h2>
-              <p className="mt-1 text-sm leading-6 text-ink-soft">
+              <h2 className="display text-2xl text-ink">새 일기</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">
                 저장하면 목록 맨 위에 나타납니다.
               </p>
             </div>
@@ -156,11 +160,11 @@ export default function DiaryBoard() {
         </form>
       ) : null}
 
-      <ol className="mt-12 space-y-5">
+      <ol className="mt-12 space-y-6">
         {entries.map((entry, index) => (
           <li
             key={entry.id}
-            className={`soft-card rise-in rise-in-${Math.min(index + 3, 6)} rounded-[1.85rem] p-7`}
+            className={`paper-sheet journal-entry rise-in rise-in-${Math.min(index + 3, 6)} rounded-[1.85rem] p-7 md:p-8`}
           >
             <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
               <time>{entry.date}</time>
@@ -172,7 +176,7 @@ export default function DiaryBoard() {
                 </span>
               ) : null}
             </div>
-            <h2 className="mt-4 font-serif text-2xl text-ink">{entry.title}</h2>
+            <h2 className="display mt-5 text-3xl text-ink">{entry.title}</h2>
             <p className="mt-4 whitespace-pre-wrap leading-8 text-ink-soft">
               {entry.body}
             </p>
