@@ -27,7 +27,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ko" className={`${sans.variable} ${serif.variable} h-full`}>
+    <html
+      lang="ko"
+      data-scroll-behavior="smooth"
+      className={`${sans.variable} ${serif.variable} h-full`}
+    >
       <body className="relative flex min-h-full flex-col overflow-x-hidden bg-paper font-sans text-ink antialiased">
         <AmbientWash />
         <div className="relative z-10 flex min-h-full flex-1 flex-col">
