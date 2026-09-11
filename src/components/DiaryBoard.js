@@ -63,20 +63,24 @@ export default function DiaryBoard() {
 
   return (
     <div>
-      <div className="flex flex-col gap-6 border-b border-line/80 pb-10 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+      <div className="border-b border-line/80 pb-10">
+        <div className="flex items-center justify-between gap-4">
           <p className="kicker rise-in">비공개</p>
-          <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">
-            나의 일기
-          </h1>
-          <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
-            적어 둔 글은 나만 봅니다. 가까운 친구와 나누는 기능은 나중에 이어질
-            예정입니다.
-          </p>
+          <button
+            type="button"
+            onClick={openComposer}
+            className="btn-quiet rise-in rise-in-2 shrink-0 whitespace-nowrap"
+          >
+            새 일기
+          </button>
         </div>
-        <button type="button" onClick={openComposer} className="btn-quiet rise-in rise-in-2">
-          새 일기
-        </button>
+        <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">
+          나의 일기
+        </h1>
+        <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
+          적어 둔 글은 나만 봅니다. 가까운 친구와 나누는 기능은 나중에 이어질
+          예정입니다.
+        </p>
       </div>
 
       {composing ? (

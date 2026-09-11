@@ -41,7 +41,7 @@ export default function SiteHeader() {
 
   return (
     <header className="site-header">
-      <div className={`header-shell ${open ? "is-open" : ""}`}>
+      <div className={`header-shell relative z-40 ${open ? "is-open" : ""}`}>
         <div className="flex h-[3.6rem] items-center justify-between px-4 sm:px-5">
           <Link href="/" className="flex items-center gap-2.5 text-ink">
             <BrandMark />
@@ -129,7 +129,7 @@ export default function SiteHeader() {
       {open ? (
         <button
           type="button"
-          className="fixed inset-0 top-0 z-[-1] bg-ink/12 md:hidden"
+          className="fixed inset-0 z-30 bg-ink/30 md:hidden"
           aria-label="메뉴 닫기"
           onClick={() => setOpen(false)}
         />

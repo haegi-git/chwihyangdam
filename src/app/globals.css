@@ -122,18 +122,18 @@ body::before {
 
 .journal-entry {
   position: relative;
-  padding-left: 1.4rem;
+  padding-left: 1.85rem;
 }
 
 .journal-entry::before {
   content: "";
   position: absolute;
-  top: 0.35rem;
-  bottom: 0.35rem;
-  left: 0;
+  top: 1.1rem;
+  bottom: 1.1rem;
+  left: 0.9rem;
   width: 2px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--sage) 42%, var(--line));
+  background: color-mix(in srgb, var(--sage) 70%, var(--line));
 }
 
 .btn-quiet,
@@ -178,9 +178,15 @@ body::before {
 
 .site-header {
   position: sticky;
-  top: 0.85rem;
+  top: 0;
   z-index: 40;
-  padding: 0 0.85rem;
+  padding: 0.85rem 0.85rem 0.45rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--paper) 94%, transparent) 0%,
+    color-mix(in srgb, var(--paper) 55%, transparent) 72%,
+    transparent 100%
+  );
 }
 
 .header-shell {
