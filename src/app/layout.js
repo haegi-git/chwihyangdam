@@ -1,4 +1,5 @@
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
+import AmbientWash from "@/components/AmbientWash";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
@@ -27,9 +28,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ko" className={`${sans.variable} ${serif.variable} h-full`}>
-      <body className="flex min-h-full flex-col bg-paper font-sans text-ink antialiased">
+      <body className="relative flex min-h-full flex-col overflow-x-hidden bg-paper font-sans text-ink antialiased">
+        <AmbientWash />
         <SiteHeader />
-        <main className="flex-1">{children}</main>
+        <main className="relative flex-1">{children}</main>
         <SiteFooter />
       </body>
     </html>

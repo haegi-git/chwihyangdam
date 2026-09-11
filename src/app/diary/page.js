@@ -1,4 +1,5 @@
 import DiaryBoard from "@/components/DiaryBoard";
+import PageShell from "@/components/PageShell";
 
 export const metadata = {
   title: "일기",
@@ -6,8 +7,8 @@ export const metadata = {
 
 export default function DiaryPage() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 py-12 md:py-16">
+    <PageShell narrow>
       <DiaryBoard />
-    </div>
+    </PageShell>
   );
 }

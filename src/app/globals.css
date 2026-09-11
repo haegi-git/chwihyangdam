@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #f6f1e8;
-  --paper-deep: #efe6d8;
-  --ink: #3a3630;
-  --ink-soft: #6a645b;
-  --sage: #6f8668;
-  --sage-deep: #546648;
-  --sage-mist: #e4ebe0;
-  --leaf: #8ea184;
-  --clay: #c4a484;
-  --card: #fffdf8;
-  --line: #e4dccf;
+  --paper: #f8f4ee;
+  --paper-deep: #efe8dc;
+  --ink: #3f3c37;
+  --ink-soft: #716b63;
+  --sage: #748c82;
+  --sage-deep: #5a7268;
+  --sage-mist: #e6eeea;
+  --leaf: #93a89c;
+  --clay: #cbb59d;
+  --card: #fffdf9;
+  --line: #eadfd0;
+  --wash: #d7e4de;
+  --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-slow: 820ms;
+  --dur-mid: 480ms;
 }
 
 @theme inline {
@@ -26,6 +30,7 @@
   --color-clay: var(--clay);
   --color-card: var(--card);
   --color-line: var(--line);
+  --color-wash: var(--wash);
   --font-sans: var(--font-sans-kr), "Noto Sans KR", sans-serif;
   --font-serif: var(--font-serif-kr), "Noto Serif KR", serif;
 }
@@ -43,4 +48,187 @@ body {
 ::selection {
   background: var(--sage-mist);
   color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--sage) 60%, white);
+  outline-offset: 3px;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wash-breathe {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    opacity: 0.82;
+    transform: translate3d(10px, -8px, 0) scale(1.06);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.fade-rise {
+  animation: fade-rise var(--dur-slow) var(--ease-calm) both;
+  animation-delay: var(--fade-delay, 0ms);
+}
+
+.menu-enter {
+  animation: fade-rise 520ms var(--ease-calm) both;
+}
+
+.overlay-enter {
+  animation: fade-in 420ms var(--ease-calm) both;
+}
+
+.pulse-soft {
+  animation: pulse-soft 5.5s var(--ease-calm) infinite;
+}
+
+.surface {
+  background: color-mix(in srgb, var(--card) 94%, white);
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  border-radius: 1.85rem;
+  box-shadow:
+    0 1px 0 rgba(255, 253, 249, 0.85),
+    0 18px 40px -32px rgba(63, 60, 55, 0.28);
+  transition:
+    transform var(--dur-mid) var(--ease-calm),
+    box-shadow var(--dur-mid) var(--ease-calm),
+    border-color var(--dur-mid) var(--ease-calm),
+    background-color var(--dur-mid) var(--ease-calm);
+}
+
+.surface-hover:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--sage) 24%, var(--line));
+  box-shadow:
+    0 1px 0 rgba(255, 253, 249, 0.95),
+    0 24px 46px -28px rgba(63, 60, 55, 0.26);
+}
+
+.surface-dashed {
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.nav-link {
+  position: relative;
+  transition:
+    color var(--dur-mid) var(--ease-calm),
+    background-color var(--dur-mid) var(--ease-calm);
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.4rem;
+  height: 1px;
+  background: color-mix(in srgb, var(--sage) 70%, white);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--dur-mid) var(--ease-calm);
+}
+
+.nav-link:hover::after,
+.nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+.wash-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  animation: wash-breathe 18s var(--ease-calm) infinite;
+}
+
+.wash-orb-a {
+  top: -7rem;
+  right: -5rem;
+  width: 24rem;
+  height: 24rem;
+  background: color-mix(in srgb, var(--sage-mist) 78%, var(--wash));
+}
+
+.wash-orb-b {
+  top: 36%;
+  left: -9rem;
+  width: 20rem;
+  height: 20rem;
+  background: color-mix(in srgb, var(--paper-deep) 72%, var(--clay));
+  animation-delay: -7s;
+  animation-duration: 22s;
+}
+
+.wash-orb-c {
+  bottom: -8rem;
+  right: 14%;
+  width: 18rem;
+  height: 18rem;
+  background: color-mix(in srgb, var(--wash) 68%, white);
+  animation-delay: -12s;
+  animation-duration: 20s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .fade-rise,
+  .menu-enter,
+  .overlay-enter,
+  .pulse-soft,
+  .wash-orb {
+    animation: none !important;
+  }
+
+  .fade-rise,
+  .menu-enter {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .surface-hover:hover {
+    transform: none;
+  }
+
+  .nav-link::after {
+    transition: none;
+  }
 }
