@@ -16,8 +16,8 @@ export default function LoginPage() {
             로그인
           </h1>
           <p className="rise-in rise-in-2 mt-8 max-w-md text-lg leading-9 text-ink-soft">
-            취향을 모아 두고, 일기를 혼자 보기 위한 작은 문입니다. 지금은 Google
-            로 이어지고, 카카오는 천천히 열 예정입니다.
+            취향을 모아 두고, 일기를 혼자 보기 위한 작은 문입니다. 지금은 Google로
+            이어지고, 카카오는 천천히 열 예정입니다.
           </p>
         </div>
 

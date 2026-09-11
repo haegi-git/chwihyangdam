@@ -33,6 +33,8 @@ npm run dev
 
 Google 로그인은 Supabase 대시보드에서 이미 켜 둔 상태를 전제로 합니다. 앱의 `/login`에서 **Google로 계속**을 누르면 Google → Supabase → `/auth/callback` 순으로 돌아온 뒤 세션이 헤더에 보입니다.
 
+Authentication → Providers → Google 에 Google Cloud의 **Client ID**와 **Client Secret**이 들어 있어야 합니다. 제공자만 켜고 비밀 값이 비어 있으면 Supabase가 `missing OAuth secret`을 반환합니다.
+
 카카오 로그인은 버튼만 두었고 **준비 중**입니다. 제공자 설정이 끝나면 같은 OAuth 흐름으로 이어 붙이면 됩니다.
 
 ### 로컬 URL 설정
