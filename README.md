@@ -6,18 +6,47 @@
 
 - Next.js App Router (JavaScript만 사용, TypeScript 없음)
 - Tailwind CSS
-- 데이터베이스·인증·ORM 없음 (화면용 목 데이터)
+- Supabase Auth (Google OAuth, PKCE)
 
-Supabase 연동은 이후 단계에서 추가할 예정입니다.
+취미·일기 화면은 아직 목 데이터입니다. 인증만 Supabase와 연결되어 있습니다.
 
 ## 시작하기
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000) 을 엽니다.
+`.env.local`에 프로젝트 URL과 anon 키를 넣은 뒤, 브라우저에서 [http://localhost:3000](http://localhost:3000) 을 엽니다.
+
+## 환경 변수
+
+| 이름 | 설명 |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 공개 anon(publishable) 키 |
+
+비밀 키·service role 키는 넣지 않습니다. `.env.local`은 Git에 올리지 마세요.
+
+## 인증 (Supabase)
+
+Google 로그인은 Supabase 대시보드에서 이미 켜 둔 상태를 전제로 합니다. 앱의 `/login`에서 **Google로 계속**을 누르면 Google → Supabase → `/auth/callback` 순으로 돌아온 뒤 세션이 헤더에 보입니다.
+
+카카오 로그인은 버튼만 두었고 **준비 중**입니다. 제공자 설정이 끝나면 같은 OAuth 흐름으로 이어 붙이면 됩니다.
+
+### 로컬 URL 설정
+
+Supabase 대시보드 → Authentication → URL Configuration:
+
+- **Site URL:** `http://localhost:3000`
+- **Redirect URLs** (허용 목록)에 다음을 넣습니다.
+  - `http://localhost:3000/auth/callback`
+  - 배포 주소가 생기면 `https://your-domain/auth/callback` 도 함께 등록합니다.
+
+Google Cloud 쪽 리디렉션은 Supabase가 안내하는 `https://<project-ref>.supabase.co/auth/v1/callback` 을 사용합니다. 앱의 `/auth/callback`은 PKCE 코드를 세션으로 바꾸는 자리입니다.
+
+세션 갱신은 Next.js 16의 `src/proxy.js`에서 처리합니다. (예전의 middleware 역할입니다.)
 
 ## 페이지
 
@@ -27,6 +56,8 @@ npm run dev
 | `/hobbies` | 취미 카드 (정적 목 데이터) |
 | `/diary` | 일기 목록과 새 일기 작성 (브라우저에서만 동작) |
 | `/friends` | 가까운 친구 / 일기 공유 자리 (준비 중) |
+| `/login` | Google 로그인 (카카오는 준비 중) |
+| `/auth/callback` | OAuth 코드 교환 후 홈으로 이동 |
 
 ## 스크립트
 

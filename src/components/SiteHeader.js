@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
+import AuthStatus from "@/components/AuthStatus";
 import BrandMark from "@/components/BrandMark";
 import { navItems } from "@/data/nav";
 
@@ -64,33 +65,36 @@ export default function SiteHeader() {
             })}
           </nav>
 
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line/90 text-ink transition-colors duration-500 hover:bg-paper-deep/80 md:hidden"
-            aria-controls={menuId}
-            aria-expanded={open}
-            aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
-            onClick={() => setOpen((current) => !current)}
-          >
-            <span className="sr-only">{open ? "메뉴 닫기" : "메뉴 열기"}</span>
-            <span aria-hidden="true" className="flex flex-col items-center gap-1.5">
-              <span
-                className={`block h-0.5 w-4 rounded-full bg-ink transition-transform duration-500 ${
-                  open ? "translate-y-2 rotate-45" : ""
-                }`}
-              />
-              <span
-                className={`block h-0.5 w-4 rounded-full bg-ink transition-opacity duration-500 ${
-                  open ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              <span
-                className={`block h-0.5 w-4 rounded-full bg-ink transition-transform duration-500 ${
-                  open ? "-translate-y-2 -rotate-45" : ""
-                }`}
-              />
-            </span>
-          </button>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <AuthStatus />
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line/90 text-ink transition-colors duration-500 hover:bg-paper-deep/80 md:hidden"
+              aria-controls={menuId}
+              aria-expanded={open}
+              aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
+              onClick={() => setOpen((current) => !current)}
+            >
+              <span className="sr-only">{open ? "메뉴 닫기" : "메뉴 열기"}</span>
+              <span aria-hidden="true" className="flex flex-col items-center gap-1.5">
+                <span
+                  className={`block h-0.5 w-4 rounded-full bg-ink transition-transform duration-500 ${
+                    open ? "translate-y-2 rotate-45" : ""
+                  }`}
+                />
+                <span
+                  className={`block h-0.5 w-4 rounded-full bg-ink transition-opacity duration-500 ${
+                    open ? "opacity-0" : "opacity-100"
+                  }`}
+                />
+                <span
+                  className={`block h-0.5 w-4 rounded-full bg-ink transition-transform duration-500 ${
+                    open ? "-translate-y-2 -rotate-45" : ""
+                  }`}
+                />
+              </span>
+            </button>
+          </div>
         </div>
 
         {open ? (
@@ -120,6 +124,9 @@ export default function SiteHeader() {
                     </li>
                   );
                 })}
+                <li className="mt-2 border-t border-line/70 pt-2">
+                  <AuthStatus variant="menu" onNavigate={() => setOpen(false)} />
+                </li>
               </ul>
             </nav>
           </div>
