@@ -18,10 +18,6 @@ export default function SiteHeader() {
   const menuId = useId();
 
   useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     if (!open) {
       return undefined;
     }

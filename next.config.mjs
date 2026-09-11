@@ -5,6 +5,7 @@ const extraOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "")
   .filter(Boolean);
 
 const nextConfig = {
+  agentRules: false,
   allowedDevOrigins: [
     "127.0.0.1",
     "localhost",
