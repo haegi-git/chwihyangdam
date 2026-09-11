@@ -1,8 +1,8 @@
 export default function PageFrame({ children, narrow = false, className = "" }) {
   return (
     <div
-      className={`mx-auto w-full px-6 py-16 md:px-8 md:py-24 ${
-        narrow ? "max-w-3xl" : "max-w-5xl"
+      className={`mx-auto w-full px-6 py-16 md:px-10 md:py-24 ${
+        narrow ? "max-w-3xl" : "max-w-6xl"
       } ${className}`.trim()}
     >
       {children}

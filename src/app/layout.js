@@ -30,9 +30,11 @@ export default function RootLayout({ children }) {
     <html lang="ko" className={`${sans.variable} ${serif.variable} h-full`}>
       <body className="relative flex min-h-full flex-col bg-paper font-sans text-ink antialiased">
         <CalmWash />
-        <SiteHeader />
-        <main className="relative flex-1">{children}</main>
-        <SiteFooter />
+        <div className="relative z-10 flex min-h-full flex-1 flex-col">
+          <SiteHeader />
+          <main className="relative flex-1">{children}</main>
+          <SiteFooter />
+        </div>
       </body>
     </html>
   );
