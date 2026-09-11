@@ -176,6 +176,52 @@ body::before {
   border-color: color-mix(in srgb, var(--sage) 40%, var(--line));
 }
 
+.btn-oauth-kakao {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  border-radius: 999px;
+  padding: 0 1.45rem;
+  border: 1px dashed color-mix(in srgb, var(--clay) 45%, var(--line));
+  background: color-mix(in srgb, var(--dusk) 42%, var(--card));
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
+.auth-chip {
+  display: inline-flex;
+  max-width: 16rem;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.35rem;
+  padding: 0.15rem 0.25rem 0.15rem 0.2rem;
+}
+
+.auth-avatar {
+  display: inline-flex;
+  height: 1.85rem;
+  width: 1.85rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--sage) 35%, var(--line));
+  background: var(--sage-mist);
+  object-fit: cover;
+}
+
+.auth-avatar-fallback {
+  font-family: var(--font-serif);
+  font-size: 0.78rem;
+  color: var(--sage-deep);
+}
+
 .site-header {
   position: sticky;
   top: 0;
