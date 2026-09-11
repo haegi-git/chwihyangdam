@@ -180,13 +180,14 @@ body::before {
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: 0.85rem 0.85rem 0.45rem;
+  padding: 0.85rem 0.85rem 0.85rem;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--paper) 94%, transparent) 0%,
-    color-mix(in srgb, var(--paper) 55%, transparent) 72%,
+    color-mix(in srgb, var(--paper) 88%, transparent) 0%,
+    color-mix(in srgb, var(--paper) 72%, transparent) 78%,
     transparent 100%
   );
+  backdrop-filter: blur(18px);
 }
 
 .header-shell {
