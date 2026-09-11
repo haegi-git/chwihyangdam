@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #f6f1e8;
-  --paper-deep: #efe6d8;
-  --ink: #3a3630;
-  --ink-soft: #6a645b;
-  --sage: #6f8668;
-  --sage-deep: #546648;
-  --sage-mist: #e4ebe0;
-  --leaf: #8ea184;
-  --clay: #c4a484;
-  --card: #fffdf8;
-  --line: #e4dccf;
+  --paper: #f3eee6;
+  --paper-deep: #e8dfd2;
+  --ink: #403c36;
+  --ink-soft: #746e65;
+  --sage: #7a8c81;
+  --sage-deep: #586960;
+  --sage-mist: #e4ece7;
+  --leaf: #97a69b;
+  --clay: #cbb59d;
+  --card: #fffaf3;
+  --line: #e5dccf;
+  --haze: #d5e3de;
+  --dusk: #efe6d9;
 }
 
 @theme inline {
@@ -26,16 +28,22 @@
   --color-clay: var(--clay);
   --color-card: var(--card);
   --color-line: var(--line);
+  --color-haze: var(--haze);
+  --color-dusk: var(--dusk);
   --font-sans: var(--font-sans-kr), "Noto Sans KR", sans-serif;
   --font-serif: var(--font-serif-kr), "Noto Serif KR", serif;
 }
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
 }
 
 body {
-  background: var(--paper);
+  background:
+    radial-gradient(1200px 520px at 12% -10%, color-mix(in srgb, var(--haze) 42%, transparent), transparent 62%),
+    radial-gradient(900px 480px at 92% 8%, color-mix(in srgb, var(--dusk) 70%, transparent), transparent 58%),
+    var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
 }
@@ -43,4 +51,266 @@ body {
 ::selection {
   background: var(--sage-mist);
   color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--sage) 55%, white);
+  outline-offset: 3px;
+}
+
+.eyebrow {
+  color: var(--sage);
+  font-size: 0.8125rem;
+  letter-spacing: 0.16em;
+}
+
+.soft-card {
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  background: color-mix(in srgb, var(--card) 94%, white);
+  box-shadow: 0 20px 44px -30px rgba(64, 60, 54, 0.28);
+  transition:
+    transform 0.55s ease,
+    box-shadow 0.55s ease,
+    border-color 0.55s ease,
+    background-color 0.55s ease;
+}
+
+.soft-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--sage) 24%, var(--line));
+  background: var(--card);
+  box-shadow: 0 24px 48px -28px rgba(64, 60, 54, 0.3);
+}
+
+.btn-quiet,
+.btn-ghost {
+  display: inline-flex;
+  height: 2.85rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 1.35rem;
+  font-size: 0.875rem;
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease,
+    box-shadow 0.45s ease;
+}
+
+.btn-quiet {
+  background: var(--sage);
+  color: var(--paper);
+  box-shadow: 0 12px 24px -18px rgba(88, 105, 96, 0.7);
+}
+
+.btn-quiet:hover {
+  background: var(--sage-deep);
+}
+
+.btn-ghost {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  color: var(--ink);
+}
+
+.btn-ghost:hover {
+  background: var(--paper-deep);
+}
+
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0.2rem;
+  left: 50%;
+  width: 0;
+  height: 1.5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sage) 80%, var(--ink));
+  opacity: 0.55;
+  transform: translateX(-50%);
+  transition: width 0.5s ease, opacity 0.5s ease;
+}
+
+.nav-link:hover::after,
+.nav-link[aria-current="page"]::after {
+  width: 1.15rem;
+  opacity: 0.85;
+}
+
+.field-quiet {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 86%, white);
+  color: var(--ink);
+  outline: none;
+  transition:
+    border-color 0.4s ease,
+    background-color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+.field-quiet::placeholder {
+  color: color-mix(in srgb, var(--ink-soft) 70%, transparent);
+}
+
+.field-quiet:focus {
+  border-color: color-mix(in srgb, var(--sage) 42%, var(--line));
+  background: var(--card);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sage) 16%, transparent);
+}
+
+.rise-in {
+  animation: rise-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rise-in-1 {
+  animation-delay: 70ms;
+}
+
+.rise-in-2 {
+  animation-delay: 140ms;
+}
+
+.rise-in-3 {
+  animation-delay: 210ms;
+}
+
+.rise-in-4 {
+  animation-delay: 280ms;
+}
+
+.rise-in-5 {
+  animation-delay: 350ms;
+}
+
+.rise-in-6 {
+  animation-delay: 420ms;
+}
+
+.menu-in {
+  animation: menu-in 0.4s ease both;
+}
+
+.wash-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(64px);
+  animation: wash-breathe 18s ease-in-out infinite;
+}
+
+.wash-orb-a {
+  top: -6rem;
+  right: -5rem;
+  width: 20rem;
+  height: 20rem;
+  background: color-mix(in srgb, var(--haze) 70%, transparent);
+}
+
+.wash-orb-b {
+  top: 18rem;
+  left: -7rem;
+  width: 18rem;
+  height: 18rem;
+  background: color-mix(in srgb, var(--dusk) 80%, transparent);
+  animation-delay: -7s;
+}
+
+.wash-orb-c {
+  right: 18%;
+  bottom: 6%;
+  width: 14rem;
+  height: 14rem;
+  background: color-mix(in srgb, var(--sage-mist) 75%, transparent);
+  animation-delay: -12s;
+}
+
+.mark-breathe {
+  animation: mark-breathe 7.5s ease-in-out infinite;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wash-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.72;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes mark-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .rise-in,
+  .rise-in-1,
+  .rise-in-2,
+  .rise-in-3,
+  .rise-in-4,
+  .rise-in-5,
+  .rise-in-6,
+  .menu-in,
+  .wash-orb,
+  .mark-breathe {
+    animation: none !important;
+  }
+
+  .soft-card:hover {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
