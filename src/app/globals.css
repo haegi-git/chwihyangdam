@@ -40,7 +40,23 @@ html {
 }
 
 body {
-  background: var(--paper);
+  background:
+    radial-gradient(
+      70rem 36rem at 92% -8%,
+      color-mix(in srgb, var(--sage-mist) 70%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      48rem 32rem at -8% 42%,
+      color-mix(in srgb, var(--paper-deep) 80%, var(--clay)),
+      transparent 58%
+    ),
+    radial-gradient(
+      40rem 28rem at 78% 108%,
+      color-mix(in srgb, var(--wash) 55%, transparent),
+      transparent 60%
+    ),
+    var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
 }
@@ -133,11 +149,12 @@ body {
 }
 
 .surface-hover:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--sage) 24%, var(--line));
+  transform: translateY(-3px);
+  background: color-mix(in srgb, var(--card) 88%, var(--sage-mist));
+  border-color: color-mix(in srgb, var(--sage) 30%, var(--line));
   box-shadow:
     0 1px 0 rgba(255, 253, 249, 0.95),
-    0 24px 46px -28px rgba(63, 60, 55, 0.26);
+    0 26px 48px -28px rgba(63, 60, 55, 0.28);
 }
 
 .surface-dashed {
@@ -182,7 +199,7 @@ body {
   right: -5rem;
   width: 24rem;
   height: 24rem;
-  background: color-mix(in srgb, var(--sage-mist) 78%, var(--wash));
+  background: color-mix(in srgb, var(--sage-mist) 88%, var(--wash));
 }
 
 .wash-orb-b {
