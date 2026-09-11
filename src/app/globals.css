@@ -87,6 +87,7 @@ body {
 
 .soft-card-dashed {
   border-style: dashed;
+  border-color: color-mix(in srgb, var(--sage) 32%, var(--line));
   box-shadow: none;
 }
 
