@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f6f1e8;
+  --paper-deep: #efe6d8;
+  --ink: #3a3630;
+  --ink-soft: #6a645b;
+  --sage: #6f8668;
+  --sage-deep: #546648;
+  --sage-mist: #e4ebe0;
+  --leaf: #8ea184;
+  --clay: #c4a484;
+  --card: #fffdf8;
+  --line: #e4dccf;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-sage: var(--sage);
+  --color-sage-deep: var(--sage-deep);
+  --color-sage-mist: var(--sage-mist);
+  --color-leaf: var(--leaf);
+  --color-clay: var(--clay);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --font-sans: var(--font-sans-kr), "Noto Sans KR", sans-serif;
+  --font-serif: var(--font-serif-kr), "Noto Serif KR", serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--sage-mist);
+  color: var(--ink);
+}
