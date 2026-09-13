@@ -2,21 +2,31 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getSafeNext } from "@/lib/paths";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-function callbackUrl() {
-  return `${window.location.origin}/auth/callback`;
+function callbackUrl(next) {
+  const url = new URL("/auth/callback", window.location.origin);
+
+  if (next && next !== "/") {
+    url.searchParams.set("next", next);
+  }
+
+  return url.toString();
 }
 
 export default function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState(() => (isSupabaseConfigured() ? undefined : null));
   const [pending, setPending] = useState("");
   const [message, setMessage] = useState("");
 
   const errorCode = searchParams.get("error");
+  const nextPath = getSafeNext(searchParams.get("next"));
   const configured = isSupabaseConfigured();
+  const writing = nextPath.includes("/hobbies/") && (nextPath.endsWith("/new") || nextPath.endsWith("/edit"));
 
   const errorHint = useMemo(() => {
     if (errorCode === "callback") {
@@ -32,11 +42,16 @@ export default function LoginForm() {
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
+      const nextUser = data.user ?? null;
+      setUser(nextUser);
+
+      if (nextUser && nextPath !== "/") {
+        router.replace(nextPath);
+      }
     });
 
     return undefined;
-  }, [configured]);
+  }, [configured, nextPath, router]);
 
   async function signInWithProvider(provider, failMessage) {
     if (!configured) {
@@ -51,7 +66,7 @@ export default function LoginForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: callbackUrl(),
+        redirectTo: callbackUrl(nextPath),
       },
     });
 
@@ -87,10 +102,10 @@ export default function LoginForm() {
             "손님"}
         </h2>
         <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
-          취향담은 이미 열려 있습니다. 홈으로 돌아가 천천히 둘러보시면 됩니다.
+          취향담은 이미 열려 있습니다. 천천히 이어서 보시면 됩니다.
         </p>
-        <Link href="/" className="btn-quiet mt-10">
-          홈으로
+        <Link href={nextPath} className="btn-quiet mt-10">
+          {nextPath === "/" ? "홈으로" : "이어서 가기"}
         </Link>
       </section>
     );
@@ -103,7 +118,9 @@ export default function LoginForm() {
         조용히 들어와 주세요
       </h2>
       <p className="mt-5 max-w-md leading-8 text-ink-soft">
-        Google 또는 카카오 계정으로 조용히 이어집니다.
+        {writing
+          ? "글을 남기려면 먼저 들어와 주세요. Google 또는 카카오 계정으로 조용히 이어집니다."
+          : "Google 또는 카카오 계정으로 조용히 이어집니다."}
       </p>
 
       <div className="mt-10 flex flex-col gap-3">

@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
+import { getSafeNext } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
-
-function getSafeNext(next) {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) {
-    return "/";
-  }
-
-  return next;
-}
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url);
