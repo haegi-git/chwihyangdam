@@ -86,7 +86,7 @@ export default async function PublicProfilePage({ params }) {
             프로필
           </h1>
           <p className="rise-in rise-in-2 mt-8 max-w-md text-lg leading-9 text-ink-soft">
-            남이 남긴 닉네임과 한 줄만 보입니다. 고치는 일은 본인만 할 수
+            남이 남긴 닉네임과 한 줄, 사진만 보입니다. 고치는 일은 본인만 할 수
             있습니다.
           </p>
         </div>
@@ -94,7 +94,7 @@ export default async function PublicProfilePage({ params }) {
         <section className="paper-sheet rise-in rise-in-3 rounded-[2.2rem] px-8 py-12 md:px-12 md:py-16">
           <div className="flex items-center gap-4">
             {photo ? (
-              // eslint-disable-next-line @next/next/no-img-element -- 소셜 아바타는 호스트가 다양해 img로 둡니다.
+              // eslint-disable-next-line @next/next/no-img-element -- 소셜·스토리지 아바타는 호스트가 다양해 img로 둡니다.
               <img
                 src={photo}
                 alt=""

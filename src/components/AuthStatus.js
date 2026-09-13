@@ -54,8 +54,7 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
       if (event.detail) {
         setProfile((current) => ({
           ...current,
-          display_name: event.detail.display_name,
-          avatar_url: event.detail.avatar_url ?? current?.avatar_url,
+          ...event.detail,
         }));
       }
     }
@@ -131,7 +130,7 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
         onClick={onNavigate}
       >
         {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- 소셜 아바타는 호스트가 다양해 img로 둡니다.
+          // eslint-disable-next-line @next/next/no-img-element -- 소셜·스토리지 아바타는 호스트가 다양해 img로 둡니다.
           <img src={photo} alt="" className="auth-avatar" referrerPolicy="no-referrer" />
         ) : (
           <span className="auth-avatar auth-avatar-fallback" aria-hidden="true">
