@@ -2,7 +2,7 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const POST_SELECT =
-  "id, title, body, created_at, updated_at, author_id, hobby_tag_id, hobby_tags ( id, slug, name )";
+  "id, title, body, image_urls, created_at, updated_at, author_id, hobby_tag_id, hobby_tags ( id, slug, name )";
 
 export function isPostId(value) {
   return typeof value === "string" && UUID_PATTERN.test(value);
