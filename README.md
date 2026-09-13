@@ -8,7 +8,7 @@
 - Tailwind CSS
 - Supabase Auth (Google·Kakao OAuth, PKCE)
 
-취미·일기 화면은 아직 목 데이터입니다. 인증만 Supabase와 연결되어 있습니다.
+취미·일기 화면은 아직 목 데이터입니다. 인증과 프로필만 Supabase와 연결되어 있습니다.
 
 ## 시작하기
 
@@ -76,7 +76,15 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | `/diary` | 일기 목록과 새 일기 작성 (브라우저에서만 동작) |
 | `/friends` | 가까운 친구 / 일기 공유 자리 (준비 중) |
 | `/login` | Google·카카오 로그인 |
+| `/profile` | 내 프로필 (닉네임·소개 수정, `public.profiles`) |
+| `/profile/[id]` | 다른 사람의 닉네임·소개 (읽기 전용) |
 | `/auth/callback` | OAuth 코드 교환 후 홈으로 이동 |
+
+## 프로필
+
+로그인한 사용자는 `/profile`에서 닉네임(`display_name`)과 한 줄 소개(`bio`)를 고칠 수 있습니다. 저장은 브라우저의 anon 키로 `profiles` 행을 본인 `id`에 맞춰 갱신합니다. 가입 시 트리거가 프로필 행을 만들고, 헤더의 이름(닉네임 또는 이메일)은 `/profile`로 이어집니다. 아바타는 Google·카카오 메타데이터를 그대로 보여 줍니다.
+
+비밀 키·service role 키는 쓰지 않습니다.
 
 ## 스크립트
 
