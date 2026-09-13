@@ -9,6 +9,7 @@ function displayName(user) {
   return (
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
+    user.user_metadata?.nickname ||
     user.email ||
     "나"
   );
