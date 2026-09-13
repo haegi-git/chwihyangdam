@@ -1,5 +1,6 @@
 import Link from "next/link";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
+import HobbyPostImages from "@/components/HobbyPostImages";
 import { formatDate } from "@/lib/dates";
 
 export default function HobbyPostCard({ post, index = 0, showTag = false }) {
@@ -33,6 +34,7 @@ export default function HobbyPostCard({ post, index = 0, showTag = false }) {
           {post.title}
         </Link>
       </h3>
+      <HobbyPostImages urls={post.image_urls} compact />
       <p className="mt-4 line-clamp-3 leading-8 text-ink-soft">{post.body}</p>
       <Link
         href={`/hobbies/post/${post.id}`}

@@ -2,12 +2,42 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loginHref } from "@/lib/paths";
+import {
+  POST_IMAGE_MAX_COUNT,
+  normalizePostImageUrls,
+  postImageErrorMessage,
+  removeOwnedPostImages,
+  uploadPostImages,
+  validatePostImageFile,
+} from "@/lib/post-images";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const TITLE_MAX = 80;
 const BODY_MAX = 4000;
+
+function keptSlot(url, index) {
+  return {
+    key: `kept-${index}-${url}`,
+    kind: "kept",
+    url,
+  };
+}
+
+function localSlot(file) {
+  const nonce =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return {
+    key: `local-${nonce}`,
+    kind: "local",
+    url: URL.createObjectURL(file),
+    file,
+  };
+}
 
 export default function HobbyPostForm({
   mode = "create",
@@ -16,13 +46,90 @@ export default function HobbyPostForm({
   cancelHref,
 }) {
   const router = useRouter();
+  const fileInputRef = useRef(null);
+  const imagesRef = useRef([]);
   const [title, setTitle] = useState(post?.title ?? "");
   const [body, setBody] = useState(post?.body ?? "");
+  const [images, setImages] = useState(() =>
+    normalizePostImageUrls(post?.image_urls).map(keptSlot),
+  );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
   const configured = isSupabaseConfigured();
   const isEdit = mode === "edit";
+  const remaining = POST_IMAGE_MAX_COUNT - images.length;
+
+  imagesRef.current = images;
+
+  useEffect(() => {
+    return () => {
+      for (const item of imagesRef.current) {
+        if (item.kind === "local" && item.url.startsWith("blob:")) {
+          URL.revokeObjectURL(item.url);
+        }
+      }
+    };
+  }, []);
+
+  function revokeLocal(item) {
+    if (item?.kind === "local" && item.url.startsWith("blob:")) {
+      URL.revokeObjectURL(item.url);
+    }
+  }
+
+  function handleImagePick(event) {
+    const files = [...(event.target.files ?? [])];
+    event.target.value = "";
+
+    if (!files.length) {
+      return;
+    }
+
+    setImages((current) => {
+      const room = POST_IMAGE_MAX_COUNT - current.length;
+
+      if (room <= 0) {
+        setError("사진은 네 장까지 담을 수 있습니다.");
+        return current;
+      }
+
+      const next = [...current];
+      let firstInvalid = "";
+
+      for (const file of files) {
+        if (next.length >= POST_IMAGE_MAX_COUNT) {
+          firstInvalid = firstInvalid || "사진은 네 장까지 담을 수 있습니다.";
+          break;
+        }
+
+        const invalid = validatePostImageFile(file);
+        if (invalid) {
+          firstInvalid = firstInvalid || invalid;
+          continue;
+        }
+
+        next.push(localSlot(file));
+      }
+
+      if (firstInvalid) {
+        setError(firstInvalid);
+      } else {
+        setError("");
+      }
+
+      return next;
+    });
+  }
+
+  function handleImageRemove(key) {
+    setImages((current) => {
+      const target = current.find((item) => item.key === key);
+      revokeLocal(target);
+      return current.filter((item) => item.key !== key);
+    });
+    setError("");
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -57,24 +164,44 @@ export default function HobbyPostForm({
       return;
     }
 
+    const keptUrls = images.filter((item) => item.kind === "kept").map((item) => item.url);
+    const localFiles = images.filter((item) => item.kind === "local").map((item) => item.file);
+    const { urls: uploadedUrls, error: uploadError } = await uploadPostImages(
+      supabase,
+      user.id,
+      localFiles,
+    );
+
+    if (uploadError) {
+      setPending(false);
+      setError(postImageErrorMessage(uploadError));
+      return;
+    }
+
+    const imageUrls = [...keptUrls, ...uploadedUrls];
+    const previousUrls = normalizePostImageUrls(post?.image_urls);
+    const droppedUrls = previousUrls.filter((url) => !keptUrls.includes(url));
+
     if (isEdit) {
       const { error: updateError } = await supabase
         .from("hobby_posts")
         .update({
           title: nextTitle,
           body: nextBody,
+          image_urls: imageUrls,
           updated_at: new Date().toISOString(),
         })
         .eq("id", post.id)
         .eq("author_id", user.id);
 
-      setPending(false);
-
       if (updateError) {
+        setPending(false);
         setError("글을 고치지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
         return;
       }
 
+      await removeOwnedPostImages(supabase, user.id, droppedUrls);
+      setPending(false);
       router.push(`/hobbies/post/${post.id}`);
       router.refresh();
       return;
@@ -87,17 +214,18 @@ export default function HobbyPostForm({
         hobby_tag_id: tag.id,
         title: nextTitle,
         body: nextBody,
+        image_urls: imageUrls,
       })
       .select("id")
       .maybeSingle();
 
-    setPending(false);
-
     if (insertError || !created?.id) {
+      setPending(false);
       setError("글을 남기지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
       return;
     }
 
+    setPending(false);
     router.push(`/hobbies/post/${created.id}`);
     router.refresh();
   }
@@ -147,6 +275,59 @@ export default function HobbyPostForm({
       <p className="mt-2 text-xs tracking-wide text-ink-soft">
         {body.trim().length}/{BODY_MAX}
       </p>
+
+      <div className="mt-6">
+        <p className="text-sm text-ink-soft" id="hobby-post-photos-label">
+          사진
+        </p>
+        <p className="mt-1 text-xs leading-6 text-ink-soft">
+          네 장까지 담을 수 있습니다. jpeg, png, webp, gif, 한 장에 5MB까지.
+        </p>
+        <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {images.map((item, index) => (
+            <li key={item.key} className="relative overflow-hidden rounded-2xl border border-line/80">
+              {/* eslint-disable-next-line @next/next/no-img-element -- 미리보기·스토리지 URL은 img로 둡니다. */}
+              <img
+                src={item.url}
+                alt=""
+                className="aspect-square w-full bg-paper-deep/40 object-cover"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-2 rounded-full bg-card/90 px-2.5 py-1 text-xs text-ink-soft shadow-sm transition-colors duration-500 hover:bg-sage-mist hover:text-ink"
+                onClick={() => handleImageRemove(item.key)}
+                disabled={pending}
+              >
+                내리기
+              </button>
+              <span className="sr-only">사진 {index + 1}</span>
+            </li>
+          ))}
+          {remaining > 0 ? (
+            <li>
+              <input
+                ref={fileInputRef}
+                id="hobby-post-photos"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                className="sr-only"
+                onChange={handleImagePick}
+                disabled={pending}
+                aria-labelledby="hobby-post-photos-label"
+              />
+              <label
+                htmlFor="hobby-post-photos"
+                className={`flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-line/90 bg-paper/40 px-3 text-center text-sm leading-6 text-ink-soft transition-colors duration-500 hover:bg-sage-mist/70 hover:text-ink ${
+                  pending ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
+                사진 고르기
+              </label>
+            </li>
+          ) : null}
+        </ul>
+      </div>
 
       {error ? (
         <p className="mt-5 text-sm leading-7 text-clay" role="alert">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
 import HobbyPostActions from "@/components/HobbyPostActions";
+import HobbyPostImages from "@/components/HobbyPostImages";
 import PageFrame from "@/components/PageFrame";
 import { formatDate } from "@/lib/dates";
 import { fetchHobbyPostById, isPostId } from "@/lib/hobbies";
@@ -88,8 +89,13 @@ export default async function HobbyPostPage({ params }) {
         <p className="mt-8 whitespace-pre-wrap text-lg leading-9 text-ink-soft">
           {post.body}
         </p>
+        <HobbyPostImages urls={post.image_urls} />
         {isOwner ? (
-          <HobbyPostActions postId={post.id} tagSlug={tag?.slug || ""} />
+          <HobbyPostActions
+            postId={post.id}
+            tagSlug={tag?.slug || ""}
+            imageUrls={post.image_urls}
+          />
         ) : null}
       </article>
     </PageFrame>

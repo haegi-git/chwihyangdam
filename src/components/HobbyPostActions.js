@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { removeOwnedPostImages } from "@/lib/post-images";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-export default function HobbyPostActions({ postId, tagSlug }) {
+export default function HobbyPostActions({ postId, tagSlug, imageUrls = [] }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -26,15 +27,22 @@ export default function HobbyPostActions({ postId, tagSlug }) {
     setError("");
 
     const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { error: deleteError } = await supabase.from("hobby_posts").delete().eq("id", postId);
 
-    setPending(false);
-
     if (deleteError) {
+      setPending(false);
       setError("글을 거두지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
       return;
     }
 
+    if (user) {
+      await removeOwnedPostImages(supabase, user.id, imageUrls);
+    }
+
+    setPending(false);
     router.push(tagSlug ? `/hobbies/${tagSlug}` : "/hobbies");
     router.refresh();
   }
