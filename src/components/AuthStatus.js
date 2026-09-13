@@ -3,25 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  PROFILE_UPDATED_EVENT,
+  profileAvatarUrl,
+  profileLabel,
+} from "@/lib/profiles";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-
-function displayName(user) {
-  return (
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.user_metadata?.nickname ||
-    user.email ||
-    "나"
-  );
-}
-
-function avatarUrl(user) {
-  return user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
-}
 
 export default function AuthStatus({ onNavigate, variant = "header" }) {
   const router = useRouter();
   const [user, setUser] = useState(() => (isSupabaseConfigured() ? undefined : null));
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -30,18 +22,49 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
 
     const supabase = createClient();
 
+    function applyUser(nextUser) {
+      setUser(nextUser);
+
+      if (!nextUser) {
+        setProfile(null);
+        return;
+      }
+
+      supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", nextUser.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setProfile(data);
+        });
+    }
+
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
+      applyUser(data.user ?? null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      applyUser(session?.user ?? null);
     });
+
+    function onProfileUpdated(event) {
+      if (event.detail) {
+        setProfile((current) => ({
+          ...current,
+          display_name: event.detail.display_name,
+          avatar_url: event.detail.avatar_url ?? current?.avatar_url,
+        }));
+      }
+    }
+
+    window.addEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
 
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
     };
   }, []);
 
@@ -53,6 +76,7 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
+    setProfile(null);
     onNavigate?.();
     router.refresh();
     router.push("/");
@@ -89,8 +113,8 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
     );
   }
 
-  const name = displayName(user);
-  const photo = avatarUrl(user);
+  const name = profileLabel(profile, user);
+  const photo = profileAvatarUrl(profile, user);
   const initial = name.slice(0, 1);
 
   return (
@@ -101,9 +125,13 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
           : "auth-chip"
       }
     >
-      <div className="flex min-w-0 items-center gap-2.5">
+      <Link
+        href="/profile"
+        className="flex min-w-0 items-center gap-2.5 rounded-full transition-colors duration-500 hover:text-sage-deep"
+        onClick={onNavigate}
+      >
         {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- Google 아바타는 호스트가 다양해 img로 둡니다.
+          // eslint-disable-next-line @next/next/no-img-element -- 소셜 아바타는 호스트가 다양해 img로 둡니다.
           <img src={photo} alt="" className="auth-avatar" referrerPolicy="no-referrer" />
         ) : (
           <span className="auth-avatar auth-avatar-fallback" aria-hidden="true">
@@ -111,9 +139,9 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
           </span>
         )}
         <span className={`min-w-0 truncate text-sm text-ink ${isMenu ? "" : "hidden max-w-[9.5rem] lg:inline"}`}>
-          {user.email || name}
+          {name}
         </span>
-      </div>
+      </Link>
       <button
         type="button"
         className={
