@@ -6,7 +6,7 @@
 
 - Next.js App Router (JavaScript만 사용, TypeScript 없음)
 - Tailwind CSS
-- Supabase Auth (Google OAuth, PKCE)
+- Supabase Auth (Google·Kakao OAuth, PKCE)
 
 취미·일기 화면은 아직 목 데이터입니다. 인증만 Supabase와 연결되어 있습니다.
 
@@ -31,11 +31,28 @@ npm run dev
 
 ## 인증 (Supabase)
 
-Google 로그인은 Supabase 대시보드에서 이미 켜 둔 상태를 전제로 합니다. 앱의 `/login`에서 **Google로 계속**을 누르면 Google → Supabase → `/auth/callback` 순으로 돌아온 뒤 세션이 헤더에 보입니다.
+Google·카카오 로그인은 앱의 `/login`에서 같은 OAuth 흐름을 씁니다. 버튼을 누르면 제공자 → Supabase → `/auth/callback` 순으로 돌아온 뒤 세션이 헤더에 보입니다.
 
-Authentication → Providers → Google 에 Google Cloud의 **Client ID**와 **Client Secret**이 들어 있어야 합니다. 제공자만 켜고 비밀 값이 비어 있으면 Supabase가 `missing OAuth secret`을 반환합니다.
+Authentication → Providers 에서 각 제공자를 켜고 비밀 값을 넣어야 합니다. 제공자만 켜고 값이 비어 있으면 Supabase가 `missing OAuth secret`을 반환합니다.
 
-카카오 로그인은 버튼만 두었고 **준비 중**입니다. 제공자 설정이 끝나면 같은 OAuth 흐름으로 이어 붙이면 됩니다.
+### Google
+
+Authentication → Providers → Google 에 Google Cloud의 **Client ID**와 **Client Secret**을 넣습니다.
+
+Google Cloud 쪽 리디렉션은 Supabase가 안내하는 `https://<project-ref>.supabase.co/auth/v1/callback` 을 사용합니다.
+
+### 카카오
+
+[Kakao Developers](https://developers.kakao.com)에서 앱을 만든 뒤 아래를 맞춥니다.
+
+- **REST API 키** → Supabase Kakao 제공자의 Client ID
+- **Kakao Login Client Secret** → Client Secret (반드시 활성화)
+- **Redirect URI** (카카오 앱): `https://<project-ref>.supabase.co/auth/v1/callback`
+- Product Settings → Kakao Login → **사용 설정 ON**
+- Consent Items: `profile_nickname`, `profile_image` (이메일이 필요하면 `account_email`, Biz App 필요)
+- 이메일을 받지 않으면 Supabase Kakao 설정에서 **Allow users without an email**을 켭니다.
+
+비밀 값은 대시보드에만 두고, 저장소에는 올리지 않습니다.
 
 ### 로컬 URL 설정
 
@@ -46,7 +63,7 @@ Supabase 대시보드 → Authentication → URL Configuration:
   - `http://localhost:3000/auth/callback`
   - 배포 주소가 생기면 `https://your-domain/auth/callback` 도 함께 등록합니다.
 
-Google Cloud 쪽 리디렉션은 Supabase가 안내하는 `https://<project-ref>.supabase.co/auth/v1/callback` 을 사용합니다. 앱의 `/auth/callback`은 PKCE 코드를 세션으로 바꾸는 자리입니다.
+앱의 `/auth/callback`은 PKCE 코드를 세션으로 바꾸는 자리입니다.
 
 세션 갱신은 Next.js 16의 `src/proxy.js`에서 처리합니다. (예전의 middleware 역할입니다.)
 
@@ -58,7 +75,7 @@ Google Cloud 쪽 리디렉션은 Supabase가 안내하는 `https://<project-ref>
 | `/hobbies` | 취미 카드 (정적 목 데이터) |
 | `/diary` | 일기 목록과 새 일기 작성 (브라우저에서만 동작) |
 | `/friends` | 가까운 친구 / 일기 공유 자리 (준비 중) |
-| `/login` | Google 로그인 (카카오는 준비 중) |
+| `/login` | Google·카카오 로그인 |
 | `/auth/callback` | OAuth 코드 교환 후 홈으로 이동 |
 
 ## 스크립트

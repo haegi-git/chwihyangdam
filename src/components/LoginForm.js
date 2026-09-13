@@ -12,7 +12,7 @@ function callbackUrl() {
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const [user, setUser] = useState(() => (isSupabaseConfigured() ? undefined : null));
-  const [pending, setPending] = useState(false);
+  const [pending, setPending] = useState("");
   const [message, setMessage] = useState("");
 
   const errorCode = searchParams.get("error");
@@ -38,27 +38,41 @@ export default function LoginForm() {
     return undefined;
   }, [configured]);
 
-  async function signInWithGoogle() {
+  async function signInWithProvider(provider, failMessage) {
     if (!configured) {
       setMessage("Supabase 환경 변수가 없어 지금은 로그인할 수 없습니다.");
       return;
     }
 
-    setPending(true);
+    setPending(provider);
     setMessage("");
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider,
       options: {
         redirectTo: callbackUrl(),
       },
     });
 
     if (error) {
-      setPending(false);
-      setMessage("Google 로그인을 시작하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+      setPending("");
+      setMessage(failMessage);
     }
+  }
+
+  function signInWithGoogle() {
+    return signInWithProvider(
+      "google",
+      "Google 로그인을 시작하지 못했습니다. 잠시 뒤 다시 시도해 주세요.",
+    );
+  }
+
+  function signInWithKakao() {
+    return signInWithProvider(
+      "kakao",
+      "카카오 로그인을 시작하지 못했습니다. 잠시 뒤 다시 시도해 주세요.",
+    );
   }
 
   if (user) {
@@ -66,7 +80,11 @@ export default function LoginForm() {
       <section className="paper-sheet rise-in rise-in-3 rounded-[2.2rem] px-8 py-12 text-center md:px-12 md:py-16">
         <p className="kicker justify-center">이미 들어와 있습니다</p>
         <h2 className="display mt-8 text-4xl text-ink md:text-5xl">
-          {user.user_metadata?.full_name || user.email || "손님"}
+          {user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.user_metadata?.nickname ||
+            user.email ||
+            "손님"}
         </h2>
         <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
           취향담은 이미 열려 있습니다. 홈으로 돌아가 천천히 둘러보시면 됩니다.
@@ -85,8 +103,7 @@ export default function LoginForm() {
         조용히 들어와 주세요
       </h2>
       <p className="mt-5 max-w-md leading-8 text-ink-soft">
-        Google 계정으로 이어집니다. 카카오는 자리를 남겨 두었고, 아직 열리지
-        않았습니다.
+        Google 또는 카카오 계정으로 조용히 이어집니다.
       </p>
 
       <div className="mt-10 flex flex-col gap-3">
@@ -94,24 +111,20 @@ export default function LoginForm() {
           type="button"
           className="btn-quiet w-full gap-3"
           onClick={signInWithGoogle}
-          disabled={pending || !configured}
+          disabled={Boolean(pending) || !configured}
         >
           <GoogleMark />
-          {pending ? "연결하는 중…" : "Google로 계속"}
+          {pending === "google" ? "연결하는 중…" : "Google로 계속"}
         </button>
 
         <button
           type="button"
           className="btn-oauth-kakao w-full"
-          disabled
-          aria-disabled="true"
-          title="카카오 로그인은 준비 중입니다."
+          onClick={signInWithKakao}
+          disabled={Boolean(pending) || !configured}
         >
           <KakaoMark />
-          <span>카카오로 계속</span>
-          <span className="rounded-full bg-dusk/80 px-2.5 py-0.5 text-[0.7rem] tracking-wide text-ink-soft">
-            준비 중
-          </span>
+          {pending === "kakao" ? "연결하는 중…" : "카카오로 계속"}
         </button>
       </div>
 
