@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { hobbies } from "@/data/hobbies";
+import HobbyPostCard from "@/components/HobbyPostCard";
+import { fetchHobbyTags, fetchRecentHobbyPosts, postCountOf } from "@/lib/hobbies";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { createClient } from "@/lib/supabase/server";
 
 const rooms = [
   {
@@ -25,8 +28,9 @@ const rooms = [
   },
 ];
 
-export default function HomePage() {
-  const [featured, ...rest] = hobbies.slice(0, 3);
+export default async function HomePage() {
+  const { tags, posts } = await loadPreview();
+  const [featured, ...rest] = tags;
 
   return (
     <div className="relative overflow-hidden">
@@ -116,31 +120,65 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-          <article className="paper-sheet rise-in rise-in-2 rounded-[2rem] p-8 md:min-h-[20rem] md:p-10">
-            <span className="rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep">
-              {featured.tag}
-            </span>
-            <h3 className="display mt-8 text-4xl text-ink md:text-5xl">{featured.name}</h3>
-            <p className="mt-5 max-w-lg text-lg leading-9 text-ink-soft">
-              {featured.summary}
+        {featured ? (
+          <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+            <Link
+              href={`/hobbies/${featured.slug}`}
+              className="paper-sheet rise-in rise-in-2 block rounded-[2rem] p-8 md:min-h-[20rem] md:p-10"
+            >
+              <span className="rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep">
+                {postCountOf(featured) ? `글 ${postCountOf(featured)}` : "아직 비어 있음"}
+              </span>
+              <h3 className="display mt-8 text-4xl text-ink md:text-5xl">
+                {featured.name}
+              </h3>
+              <p className="mt-5 max-w-lg text-lg leading-9 text-ink-soft">
+                {featured.description || "이 취향을 천천히 들여다보는 자리입니다."}
+              </p>
+            </Link>
+            <ul className="grid gap-6">
+              {rest.map((tag, index) => (
+                <li key={tag.id}>
+                  <Link
+                    href={`/hobbies/${tag.slug}`}
+                    className={`paper-sheet rise-in rise-in-${index + 3} block rounded-[1.75rem] p-7`}
+                  >
+                    <span className="rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep">
+                      {postCountOf(tag) ? `글 ${postCountOf(tag)}` : "아직 비어 있음"}
+                    </span>
+                    <h3 className="display mt-4 text-2xl text-ink">{tag.name}</h3>
+                    <p className="mt-3 leading-7 text-ink-soft">
+                      {tag.description || "이 취향을 천천히 들여다보는 자리입니다."}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <section className="paper-sheet rise-in rise-in-2 mt-10 rounded-[2rem] px-8 py-12 text-center">
+            <h3 className="display text-3xl text-ink">취향이 천천히 모이고 있습니다</h3>
+            <p className="mx-auto mt-4 max-w-md leading-8 text-ink-soft">
+              취미 태그가 열리면 이곳에 먼저 보입니다.
             </p>
-          </article>
-          <ul className="grid gap-6">
-            {rest.map((hobby, index) => (
-              <li
-                key={hobby.id}
-                className={`paper-sheet rise-in rise-in-${index + 3} rounded-[1.75rem] p-7`}
-              >
-                <span className="rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep">
-                  {hobby.tag}
-                </span>
-                <h3 className="display mt-4 text-2xl text-ink">{hobby.name}</h3>
-                <p className="mt-3 leading-7 text-ink-soft">{hobby.summary}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
+          </section>
+        )}
+
+        {posts.length ? (
+          <div className="mt-16">
+            <div className="section-rule rise-in">
+              <span>최근 글</span>
+            </div>
+            <ol className="mt-10 grid gap-6 lg:grid-cols-3">
+              {posts.map((post, index) => (
+                <li key={post.id}>
+                  <HobbyPostCard post={post} index={index} showTag />
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
+
         <Link
           href="/hobbies"
           className="mt-8 inline-flex text-sm text-sage-deep underline-offset-8 hover:underline md:hidden"
@@ -150,4 +188,21 @@ export default function HomePage() {
       </section>
     </div>
   );
+}
+
+async function loadPreview() {
+  if (!isSupabaseConfigured()) {
+    return { tags: [], posts: [] };
+  }
+
+  const supabase = await createClient();
+  const [allTags, posts] = await Promise.all([
+    fetchHobbyTags(supabase),
+    fetchRecentHobbyPosts(supabase, 3),
+  ]);
+
+  return {
+    tags: allTags.slice(0, 3),
+    posts,
+  };
 }

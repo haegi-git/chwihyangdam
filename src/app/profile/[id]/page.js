@@ -1,5 +1,7 @@
 import Link from "next/link";
+import HobbyPostCard from "@/components/HobbyPostCard";
 import PageFrame from "@/components/PageFrame";
+import { fetchHobbyPostsByAuthor } from "@/lib/hobbies";
 import { isProfileId } from "@/lib/profiles";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -128,7 +130,44 @@ export default async function PublicProfilePage({ params }) {
           )}
         </section>
       </div>
+
+      <AuthorPosts authorId={profile.id} />
     </PageFrame>
+  );
+}
+
+async function AuthorPosts({ authorId }) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const posts = await fetchHobbyPostsByAuthor(supabase, authorId);
+
+  if (!posts.length) {
+    return (
+      <section className="mt-16">
+        <div className="section-rule">
+          <span>남긴 글</span>
+        </div>
+        <p className="mt-8 leading-8 text-ink-soft">아직 공개된 취미 글이 없습니다.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mt-16">
+      <div className="section-rule">
+        <span>남긴 글</span>
+      </div>
+      <ol className="mt-10 grid gap-6 lg:grid-cols-2">
+        {posts.map((post, index) => (
+          <li key={post.id}>
+            <HobbyPostCard post={post} index={index} showTag />
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
