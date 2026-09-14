@@ -34,7 +34,7 @@ export default function HobbyPostCard({ post, index = 0, showTag = false }) {
           {post.title}
         </Link>
       </h3>
-      <HobbyPostImages urls={post.image_urls} compact />
+      <HobbyPostImages urls={post.image_urls} compact limit={1} />
       <p className="mt-4 line-clamp-3 leading-8 text-ink-soft">{post.body}</p>
       <Link
         href={`/hobbies/post/${post.id}`}

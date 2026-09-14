@@ -94,7 +94,22 @@ Supabase 대시보드 → Authentication → URL Configuration:
 
 `hobby_tags`는 누구나 읽을 수 있습니다. `hobby_posts`도 읽기는 열려 있고, 쓰기는 로그인한 본인(`author_id = auth.uid()`)만 가능합니다. 목록에서는 `profiles`의 `display_name`과 `avatar_url`을 붙여 작성자를 보여 줍니다. 손님은 읽고, 글 남기기는 `/login`을 거친 뒤에만 열립니다.
 
-글에 붙인 사진은 공개 버킷 `post-images`에 `{user.id}/` 아래로 올린 뒤 공개 URL을 `hobby_posts.image_urls`에 담습니다. 한 글에 네 장까지, jpeg·png·webp·gif, 장당 5MB입니다. 목록과 상세에서는 작은 격자 갤러리로 조용히 보입니다.
+글에 붙인 사진은 공개 버킷 `post-images`에 `{user.id}/` 아래로 올린 뒤, 문단과 같은 순서로 `hobby_posts.content`(jsonb)에 담습니다.
+
+```json
+{
+  "version": 1,
+  "blocks": [
+    { "type": "paragraph", "text": "첫 문단" },
+    { "type": "image", "url": "https://…/post-images/{user_id}/….jpg" },
+    { "type": "paragraph", "text": "사진 아래 문단" }
+  ]
+}
+```
+
+`body`에는 문단만 이어 붙여 목록 미리보기에 쓰고, `image_urls`에는 같은 순서의 사진 URL을 넣어 카드 썸네일과 스토리지 정리에 씁니다. 한 글에 여덟 장까지, jpeg·png·webp·gif, 장당 5MB입니다. `content`가 비어 있거나 형식이 다른 예전 글은 `body` 다음에 `image_urls`를 이어 보여 줍니다.
+
+스키마 변경은 `supabase/migrations/20260914000000_hobby_posts_content.sql`을 Supabase SQL Editor에서 실행하면 됩니다.
 
 ## 스크립트
 
