@@ -335,6 +335,40 @@ body::before {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--sage) 14%, transparent);
 }
 
+.compose-surface {
+  min-height: 16rem;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 42%, white);
+  transition:
+    border-color 0.4s ease,
+    background-color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+.compose-surface:focus-within {
+  border-color: color-mix(in srgb, var(--sage) 48%, var(--line));
+  background: var(--card);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sage) 14%, transparent);
+}
+
+.compose-field {
+  display: block;
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 1.125rem;
+  line-height: 2.25rem;
+  outline: none;
+}
+
+.compose-field::placeholder {
+  color: color-mix(in srgb, var(--ink-soft) 55%, transparent);
+}
+
 .brand-mark {
   display: inline-flex;
   height: 2.35rem;
