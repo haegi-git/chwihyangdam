@@ -435,8 +435,8 @@ export default function HobbyPostForm({
       </p>
 
       <div className="mt-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-sm text-ink-soft" id="hobby-post-body-label">
               본문
             </p>

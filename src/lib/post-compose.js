@@ -35,6 +35,26 @@ export function composeLocalImage(file, url) {
   };
 }
 
+function joinComposeParagraphTexts(left, right) {
+  if (!left) {
+    return right;
+  }
+
+  if (!right) {
+    return left;
+  }
+
+  if (left.endsWith("\n") || right.startsWith("\n")) {
+    return `${left}${right}`;
+  }
+
+  if (/^[.,!?。…\s을를이가은는의와과도만에로고며면]/.test(right)) {
+    return `${left}${right}`;
+  }
+
+  return `${left}\n\n${right}`;
+}
+
 export function mergeAdjacentComposeParagraphs(blocks) {
   if (!Array.isArray(blocks)) {
     return [];
@@ -46,10 +66,10 @@ export function mergeAdjacentComposeParagraphs(blocks) {
     const last = next[next.length - 1];
 
     if (block?.type === "paragraph" && last?.type === "paragraph") {
-      const left = last.text;
-      const right = block.text;
-      const sep = left && right && !left.endsWith("\n") && !right.startsWith("\n") ? "\n\n" : "";
-      next[next.length - 1] = { ...last, text: `${left}${sep}${right}` };
+      next[next.length - 1] = {
+        ...last,
+        text: joinComposeParagraphTexts(last.text, block.text),
+      };
       continue;
     }
 
@@ -78,14 +98,35 @@ export function normalizeComposeBlocks(blocks) {
 }
 
 export function composeBlocksFromPost(post) {
-  const next = normalizeComposeBlocks(
-    blocksFromPost(post).map((block) =>
-      block.type === "image" ? composeKeptImage(block.url) : composeParagraph(block.text),
-    ),
-  );
+  const mapped = blocksFromPost(post).map((block, index) => {
+    if (block.type === "image") {
+      return {
+        key: `kept-${index}`,
+        type: "image",
+        kind: "kept",
+        url: block.url,
+      };
+    }
+
+    return {
+      key: `para-${index}`,
+      type: "paragraph",
+      text: block.text,
+    };
+  });
+
+  const next = mergeAdjacentComposeParagraphs(mapped);
+
+  if (!next.some((block) => block?.type === "paragraph")) {
+    next.push(composeParagraph("", "para-empty"));
+  }
 
   if (next[0]?.type === "image") {
-    return [composeParagraph(), ...next];
+    next.unshift(composeParagraph("", "para-lead-in"));
+  }
+
+  if (next[next.length - 1]?.type === "image") {
+    next.push(composeParagraph("", "para-continue"));
   }
 
   return next;
