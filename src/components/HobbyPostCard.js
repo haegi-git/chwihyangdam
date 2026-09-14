@@ -2,9 +2,11 @@ import Link from "next/link";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
 import HobbyPostImages from "@/components/HobbyPostImages";
 import { formatDate } from "@/lib/dates";
+import { commentCountOf } from "@/lib/hobbies";
 
 export default function HobbyPostCard({ post, index = 0, showTag = false }) {
   const tag = post.hobby_tags;
+  const commentCount = commentCountOf(post);
 
   return (
     <article
@@ -22,6 +24,17 @@ export default function HobbyPostCard({ post, index = 0, showTag = false }) {
               className="rounded-full bg-sage-mist px-2.5 py-1 text-xs tracking-wide text-sage-deep"
             >
               {tag.name}
+            </Link>
+          </>
+        ) : null}
+        {commentCount > 0 ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <Link
+              href={`/hobbies/post/${post.id}#comments`}
+              className="underline-offset-8 transition-colors duration-500 hover:text-sage-deep hover:underline"
+            >
+              댓글 {commentCount}
             </Link>
           </>
         ) : null}

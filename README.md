@@ -75,7 +75,7 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | `/hobbies` | 취미 태그 목록 (`hobby_tags`) |
 | `/hobbies/[slug]` | 태그 소개와 최근 글 |
 | `/hobbies/[slug]/new` | 글 쓰기 (로그인 필요, 손님은 `/login`으로) |
-| `/hobbies/post/[id]` | 글 상세. 작성자 이름은 `/profile/[id]`로 이어짐 |
+| `/hobbies/post/[id]` | 글 상세와 댓글. 작성자 이름은 `/profile/[id]`로 이어짐 |
 | `/hobbies/post/[id]/edit` | 본인 글 고치기 |
 | `/diary` | 일기 목록과 새 일기 작성 (브라우저에서만 동작) |
 | `/friends` | 가까운 친구 / 일기 공유 자리 (준비 중) |
@@ -93,6 +93,8 @@ Supabase 대시보드 → Authentication → URL Configuration:
 ## 취미 글
 
 `hobby_tags`는 누구나 읽을 수 있습니다. `hobby_posts`도 읽기는 열려 있고, 쓰기는 로그인한 본인(`author_id = auth.uid()`)만 가능합니다. 목록에서는 `profiles`의 `display_name`과 `avatar_url`을 붙여 작성자를 보여 줍니다. 손님은 읽고, 글 남기기는 `/login`을 거친 뒤에만 열립니다.
+
+글 아래 댓글은 `hobby_comments`에 평평하게 쌓입니다(답글 없음). 읽기는 열려 있고, 남기거나 고치거나 거두는 일은 로그인한 본인만 할 수 있습니다. 본문은 1–1000자의 평범한 글만 담습니다. 손님은 댓글을 읽고, 남기기는 `/login`을 거친 뒤에만 열립니다. 스키마는 `supabase/migrations/20260914032224_hobby_comments.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 실행하면 됩니다.
 
 글에 붙인 사진은 공개 버킷 `post-images`에 `{user.id}/` 아래로 올린 뒤, 문단과 같은 순서로 `hobby_posts.content`(jsonb)에 담습니다.
 
