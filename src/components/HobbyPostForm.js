@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { loginHref } from "@/lib/paths";
 import {
+  composeBlocksFromPost,
+  composeLocalImage,
+  insertComposeImages,
+  paragraphKeyAfterImages,
+  persistableComposeBlocks,
+  removeComposeImage,
+} from "@/lib/post-compose";
+import {
   bodyFromBlocks,
   blocksFromPost,
   imageUrlsFromBlocks,
@@ -23,70 +31,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const TITLE_MAX = 80;
 const BODY_MAX = 4000;
-
-function newBlockKey() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function paragraphBlock(text = "") {
-  return {
-    key: newBlockKey(),
-    type: "paragraph",
-    text,
-  };
-}
-
-function keptImageBlock(url) {
-  return {
-    key: newBlockKey(),
-    type: "image",
-    kind: "kept",
-    url,
-  };
-}
-
-function localImageBlock(file) {
-  return {
-    key: newBlockKey(),
-    type: "image",
-    kind: "local",
-    url: URL.createObjectURL(file),
-    file,
-  };
-}
-
-function editorBlocksFromPost(post) {
-  const blocks = blocksFromPost(post).map((block) => {
-    if (block.type === "image") {
-      return keptImageBlock(block.url);
-    }
-
-    return paragraphBlock(block.text);
-  });
-
-  if (!blocks.some((block) => block.type === "paragraph")) {
-    blocks.unshift(paragraphBlock());
-  }
-
-  return blocks;
-}
-
-function persistableBlocks(blocks, uploadedByKey) {
-  return blocks
-    .map((block) => {
-      if (block.type === "paragraph") {
-        return { type: "paragraph", text: block.text };
-      }
-
-      const url = block.kind === "local" ? uploadedByKey.get(block.key) : block.url;
-      return url ? { type: "image", url } : null;
-    })
-    .filter(Boolean);
-}
+const LINE_HEIGHT = 36;
 
 function resizeParagraphField(node) {
   if (!node) {
@@ -94,7 +39,11 @@ function resizeParagraphField(node) {
   }
 
   node.style.height = "auto";
-  node.style.height = `${Math.max(node.scrollHeight, 132)}px`;
+  node.style.height = `${Math.max(node.scrollHeight, LINE_HEIGHT)}px`;
+}
+
+function localImageBlock(file) {
+  return composeLocalImage(file, URL.createObjectURL(file));
 }
 
 export default function HobbyPostForm({
@@ -106,10 +55,11 @@ export default function HobbyPostForm({
   const router = useRouter();
   const fileInputRef = useRef(null);
   const blocksRef = useRef([]);
-  const insertRef = useRef({ index: 0, splitAt: null });
   const focusRef = useRef({ key: "", cursor: 0 });
+  const pendingFocusRef = useRef(null);
+  const paragraphNodes = useRef(new Map());
   const [title, setTitle] = useState(post?.title ?? "");
-  const [blocks, setBlocks] = useState(() => editorBlocksFromPost(post));
+  const [blocks, setBlocks] = useState(() => composeBlocksFromPost(post));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -133,14 +83,62 @@ export default function HobbyPostForm({
     };
   }, []);
 
+  useEffect(() => {
+    for (const node of paragraphNodes.current.values()) {
+      resizeParagraphField(node);
+    }
+
+    const pendingFocus = pendingFocusRef.current;
+    if (!pendingFocus) {
+      return;
+    }
+
+    pendingFocusRef.current = null;
+    const node = paragraphNodes.current.get(pendingFocus.key);
+    if (!node) {
+      return;
+    }
+
+    node.focus();
+    const pos =
+      pendingFocus.cursor === "end"
+        ? node.value.length
+        : Math.min(Math.max(pendingFocus.cursor ?? 0, 0), node.value.length);
+    node.setSelectionRange(pos, pos);
+    focusRef.current = { key: pendingFocus.key, cursor: pos };
+    resizeParagraphField(node);
+  }, [blocks]);
+
   function revokeLocal(block) {
     if (block?.kind === "local" && block.url?.startsWith("blob:")) {
       URL.revokeObjectURL(block.url);
     }
   }
 
+  function bindParagraphNode(key, node) {
+    if (node) {
+      paragraphNodes.current.set(key, node);
+      resizeParagraphField(node);
+    } else {
+      paragraphNodes.current.delete(key);
+    }
+  }
+
   function rememberFocus(key, cursor) {
     focusRef.current = { key, cursor };
+  }
+
+  function focusParagraph(key, cursor = "end") {
+    const node = paragraphNodes.current.get(key);
+    if (!node) {
+      pendingFocusRef.current = { key, cursor };
+      return;
+    }
+
+    node.focus();
+    const pos = cursor === "end" ? node.value.length : Math.min(Math.max(cursor, 0), node.value.length);
+    node.setSelectionRange(pos, pos);
+    rememberFocus(key, pos);
   }
 
   function handleParagraphChange(key, value) {
@@ -156,57 +154,54 @@ export default function HobbyPostForm({
     });
   }
 
-  function handleMoveBlock(index, delta) {
-    setBlocks((current) => {
-      const target = index + delta;
+  function handleParagraphKeyDown(event, index) {
+    const node = event.target;
+    const cursor = node.selectionStart ?? 0;
+    const atStart = cursor === 0 && node.selectionEnd === 0;
+    const atEnd = cursor === node.value.length && node.selectionEnd === node.value.length;
 
-      if (target < 0 || target >= current.length) {
-        return current;
+    if (event.key === "ArrowUp" && atStart) {
+      const previous = blocks
+        .slice(0, index)
+        .reverse()
+        .find((block) => block.type === "paragraph");
+      if (previous) {
+        event.preventDefault();
+        focusParagraph(previous.key, "end");
       }
+      return;
+    }
 
-      const next = [...current];
-      const [item] = next.splice(index, 1);
-      next.splice(target, 0, item);
-      return next;
-    });
-    setError("");
+    if (event.key === "ArrowDown" && atEnd) {
+      const following = blocks.slice(index + 1).find((block) => block.type === "paragraph");
+      if (following) {
+        event.preventDefault();
+        focusParagraph(following.key, 0);
+      }
+      return;
+    }
+
+    if (event.key !== "Backspace" || !atStart) {
+      return;
+    }
+
+    const previous = blocks[index - 1];
+    const current = blocks[index];
+    if (previous?.type !== "image" || current?.type !== "paragraph" || current.text) {
+      return;
+    }
+
+    event.preventDefault();
+    handleImageRemove(previous.key);
   }
 
-  function handleInsertParagraph(index) {
-    setBlocks((current) => {
-      const next = [...current];
-      next.splice(index, 0, paragraphBlock());
-      return next;
-    });
-    setError("");
-  }
-
-  function requestImages({ index, splitAt = null }) {
+  function handlePhotoButton() {
     if (remainingImages <= 0) {
       setError("사진은 여덟 장까지 담을 수 있습니다.");
       return;
     }
 
-    insertRef.current = { index, splitAt };
     fileInputRef.current?.click();
-  }
-
-  function handleInsertImageAfter(index) {
-    const block = blocks[index];
-
-    if (block?.type === "paragraph" && focusRef.current.key === block.key) {
-      const cursor = Math.min(Math.max(focusRef.current.cursor, 0), block.text.length);
-
-      if (cursor > 0 && cursor < block.text.length) {
-        requestImages({ index, splitAt: cursor });
-        return;
-      }
-
-      requestImages({ index: cursor <= 0 ? index : index + 1 });
-      return;
-    }
-
-    requestImages({ index: index + 1 });
   }
 
   function handleImagePick(event) {
@@ -216,8 +211,6 @@ export default function HobbyPostForm({
     if (!files.length) {
       return;
     }
-
-    const { index, splitAt } = insertRef.current;
 
     setBlocks((current) => {
       const room = POST_IMAGE_MAX_COUNT - current.filter((block) => block.type === "image").length;
@@ -252,21 +245,9 @@ export default function HobbyPostForm({
         return current;
       }
 
-      const next = [...current];
-      const target = next[index];
-      const insertAt = Math.max(0, Math.min(index, next.length));
-
-      if (typeof splitAt === "number" && target?.type === "paragraph") {
-        const before = target.text.slice(0, splitAt);
-        const after = target.text.slice(splitAt);
-        next.splice(index, 1, paragraphBlock(before), ...incoming, paragraphBlock(after));
-      } else {
-        next.splice(insertAt, 0, ...incoming);
-      }
-
-      if (next[next.length - 1]?.type === "image") {
-        next.push(paragraphBlock());
-      }
+      const next = insertComposeImages(current, incoming, focusRef.current);
+      const focusKey = paragraphKeyAfterImages(next, incoming.map((block) => block.key));
+      pendingFocusRef.current = { key: focusKey, cursor: 0 };
 
       if (firstInvalid) {
         setError(firstInvalid);
@@ -279,14 +260,34 @@ export default function HobbyPostForm({
   }
 
   function handleImageRemove(key) {
-    setBlocks((current) => {
-      const target = current.find((block) => block.key === key);
-      revokeLocal(target);
+    const current = blocksRef.current;
+    const target = current.find((block) => block.key === key);
+    const targetIndex = current.findIndex((block) => block.key === key);
+    const previousParagraph = current
+      .slice(0, Math.max(targetIndex, 0))
+      .reverse()
+      .find((block) => block.type === "paragraph");
 
-      const next = current.filter((block) => block.key !== key);
-      return next.some((block) => block.type === "paragraph") ? next : [paragraphBlock(), ...next];
-    });
+    revokeLocal(target);
+    const next = removeComposeImage(current, key);
+    setBlocks(next);
+
+    if (previousParagraph) {
+      pendingFocusRef.current = { key: previousParagraph.key, cursor: "end" };
+    }
+
     setError("");
+  }
+
+  function handleSurfaceClick(event) {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    const lastParagraph = [...blocks].reverse().find((block) => block.type === "paragraph");
+    if (lastParagraph) {
+      focusParagraph(lastParagraph.key, "end");
+    }
   }
 
   async function handleSubmit(event) {
@@ -343,7 +344,7 @@ export default function HobbyPostForm({
     const uploadedByKey = new Map(
       localBlocks.map((block, index) => [block.key, uploadedUrls[index]]).filter(([, url]) => url),
     );
-    const nextBlocks = persistableBlocks(blocks, uploadedByKey);
+    const nextBlocks = persistableComposeBlocks(blocks, uploadedByKey);
     const imageUrls = imageUrlsFromBlocks(nextBlocks);
     const content = serializePostContent(nextBlocks);
     const previousUrls = uniquePostImageUrls(
@@ -414,8 +415,8 @@ export default function HobbyPostForm({
       </h2>
       <p className="mt-4 leading-8 text-ink-soft">
         {isEdit
-          ? "문단 사이에 사진을 두고 천천히 다듬어도 좋습니다."
-          : "글을 쓰다가 그 자리에 사진을 넣을 수 있습니다. 짧게라도 좋아요."}
+          ? "글을 쓰다가 사진을 넣으면 그 자리에 남습니다. 천천히 다듬어도 좋습니다."
+          : "한 장의 종이에 적듯 쓰다가, 사진을 넣으면 커서 자리에 들어갑니다."}
       </p>
 
       <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-title">
@@ -434,11 +435,26 @@ export default function HobbyPostForm({
       </p>
 
       <div className="mt-6">
-        <p className="text-sm text-ink-soft" id="hobby-post-body-label">
-          본문
-        </p>
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm text-ink-soft" id="hobby-post-body-label">
+              본문
+            </p>
+            <p className="mt-1 text-xs leading-6 text-ink-soft" id="hobby-post-body-hint">
+              글 쓰다가 사진 넣기를 누르면 커서 위치에 들어가요.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-line/90 bg-card/80 px-4 text-sm text-ink-soft transition-colors duration-500 hover:bg-sage-mist hover:text-ink disabled:opacity-50"
+            onClick={handlePhotoButton}
+            disabled={pending || remainingImages <= 0}
+          >
+            사진 넣기
+          </button>
+        </div>
         <p className="mt-1 text-xs leading-6 text-ink-soft">
-          문단 사이에 사진을 넣을 수 있습니다. 여덟 장까지, jpeg·png·webp·gif, 한 장에 5MB까지.
+          여덟 장까지, jpeg·png·webp·gif, 한 장에 5MB까지.
         </p>
 
         <input
@@ -453,92 +469,70 @@ export default function HobbyPostForm({
           aria-labelledby="hobby-post-body-label"
         />
 
-        <div className="mt-4">
-          <InsertRail
-            onParagraph={() => handleInsertParagraph(0)}
-            onImage={() => requestImages({ index: 0 })}
-            imageDisabled={remainingImages <= 0}
-            pending={pending}
-          />
-
-          {blocks.map((block, index) => (
-            <div key={block.key}>
-              {block.type === "paragraph" ? (
-                <label className="sr-only" htmlFor={`hobby-post-paragraph-${block.key}`}>
-                  문단 {index + 1}
-                </label>
-              ) : null}
-
-              {block.type === "paragraph" ? (
-                <textarea
-                  id={`hobby-post-paragraph-${block.key}`}
-                  value={block.text}
-                  rows={4}
-                  className="field-quiet mt-1 resize-none rounded-2xl px-4 py-3"
-                  placeholder={index === 0 ? "천천히, 짧게라도 좋아요." : "이어서 적어 주세요."}
-                  disabled={pending}
-                  onChange={(event) => {
-                    handleParagraphChange(block.key, event.target.value);
-                    resizeParagraphField(event.target);
-                  }}
-                  onFocus={(event) => {
-                    rememberFocus(block.key, event.target.selectionStart ?? block.text.length);
-                    resizeParagraphField(event.target);
-                  }}
-                  onClick={(event) => rememberFocus(block.key, event.target.selectionStart ?? 0)}
-                  onKeyUp={(event) => rememberFocus(block.key, event.target.selectionStart ?? 0)}
-                  onSelect={(event) => rememberFocus(block.key, event.target.selectionStart ?? 0)}
-                  ref={resizeParagraphField}
-                />
+        <div
+          className="compose-surface mt-4 cursor-text rounded-[1.35rem] px-5 py-6 md:px-7 md:py-8"
+          onClick={handleSurfaceClick}
+          role="group"
+          aria-labelledby="hobby-post-body-label"
+          aria-describedby="hobby-post-body-hint"
+        >
+          <div className="space-y-7">
+            {blocks.map((block, index) =>
+              block.type === "paragraph" ? (
+                <div key={block.key}>
+                  <label className="sr-only" htmlFor={`hobby-post-paragraph-${block.key}`}>
+                    {index === 0 ? "본문" : "이어지는 글"}
+                  </label>
+                  <textarea
+                    id={`hobby-post-paragraph-${block.key}`}
+                    value={block.text}
+                    rows={1}
+                    className="compose-field"
+                    placeholder={
+                      !block.text && !blocks.some((item) => item.type === "image")
+                        ? "천천히, 짧게라도 좋아요."
+                        : !block.text && index === 0
+                          ? "사진 위에 적어도 좋아요."
+                          : !block.text
+                            ? "이어서 적어도 좋아요."
+                            : undefined
+                    }
+                    disabled={pending}
+                    onChange={(event) => {
+                      handleParagraphChange(block.key, event.target.value);
+                      resizeParagraphField(event.target);
+                    }}
+                    onFocus={(event) => {
+                      rememberFocus(block.key, event.target.selectionStart ?? block.text.length);
+                      resizeParagraphField(event.target);
+                    }}
+                    onClick={(event) => rememberFocus(block.key, event.target.selectionStart ?? 0)}
+                    onKeyDown={(event) => handleParagraphKeyDown(event, index)}
+                    onKeyUp={(event) => rememberFocus(block.key, event.target.selectionStart ?? 0)}
+                    onSelect={(event) => rememberFocus(block.key, event.target.selectionStart ?? 0)}
+                    ref={(node) => bindParagraphNode(block.key, node)}
+                  />
+                </div>
               ) : (
-                <figure className="relative mt-1 overflow-hidden rounded-2xl border border-line/80">
+                <figure key={block.key} className="group relative m-0">
                   {/* eslint-disable-next-line @next/next/no-img-element -- 미리보기·스토리지 URL은 img로 둡니다. */}
                   <img
                     src={block.url}
                     alt=""
-                    className="max-h-[28rem] w-full bg-paper-deep/40 object-cover"
+                    className="w-full rounded-2xl border border-line/70 bg-paper-deep/40 object-cover"
                   />
-                  <div className="absolute right-2 top-2 flex flex-wrap justify-end gap-1">
-                    {index > 0 ? (
-                      <button
-                        type="button"
-                        className="rounded-full bg-card/90 px-2.5 py-1 text-xs text-ink-soft shadow-sm transition-colors duration-500 hover:bg-sage-mist hover:text-ink"
-                        onClick={() => handleMoveBlock(index, -1)}
-                        disabled={pending}
-                      >
-                        위로
-                      </button>
-                    ) : null}
-                    {index < blocks.length - 1 ? (
-                      <button
-                        type="button"
-                        className="rounded-full bg-card/90 px-2.5 py-1 text-xs text-ink-soft shadow-sm transition-colors duration-500 hover:bg-sage-mist hover:text-ink"
-                        onClick={() => handleMoveBlock(index, 1)}
-                        disabled={pending}
-                      >
-                        아래로
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="rounded-full bg-card/90 px-2.5 py-1 text-xs text-ink-soft shadow-sm transition-colors duration-500 hover:bg-sage-mist hover:text-ink"
-                      onClick={() => handleImageRemove(block.key)}
-                      disabled={pending}
-                    >
-                      내리기
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="absolute right-2 top-2 rounded-full bg-card/90 px-2.5 py-1 text-xs text-ink-soft shadow-sm transition-colors duration-500 hover:bg-sage-mist hover:text-ink"
+                    onClick={() => handleImageRemove(block.key)}
+                    disabled={pending}
+                  >
+                    내리기
+                  </button>
                 </figure>
-              )}
-
-              <InsertRail
-                onParagraph={() => handleInsertParagraph(index + 1)}
-                onImage={() => handleInsertImageAfter(index)}
-                imageDisabled={remainingImages <= 0}
-                pending={pending}
-              />
-            </div>
-          ))}
+              ),
+            )}
+          </div>
         </div>
 
         <p className="mt-2 text-xs tracking-wide text-ink-soft">
@@ -563,29 +557,3 @@ export default function HobbyPostForm({
     </form>
   );
 }
-
-function InsertRail({ onParagraph, onImage, imageDisabled, pending }) {
-  return (
-    <div className="flex items-center gap-3 py-2.5 opacity-55 transition-opacity duration-500 hover:opacity-100 focus-within:opacity-100">
-      <span className="h-px flex-1 bg-line/80" aria-hidden="true" />
-      <button
-        type="button"
-        className="text-xs tracking-wide text-ink-soft transition-colors duration-500 hover:text-sage-deep disabled:opacity-50"
-        onClick={onParagraph}
-        disabled={pending}
-      >
-        글 이어 쓰기
-      </button>
-      <button
-        type="button"
-        className="text-xs tracking-wide text-ink-soft transition-colors duration-500 hover:text-sage-deep disabled:opacity-50"
-        onClick={onImage}
-        disabled={pending || imageDisabled}
-      >
-        사진 넣기
-      </button>
-      <span className="h-px flex-1 bg-line/80" aria-hidden="true" />
-    </div>
-  );
-}
-
