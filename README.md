@@ -94,7 +94,7 @@ Supabase 대시보드 → Authentication → URL Configuration:
 
 `hobby_tags`는 누구나 읽을 수 있습니다. `hobby_posts`도 읽기는 열려 있고, 쓰기는 로그인한 본인(`author_id = auth.uid()`)만 가능합니다. 목록에서는 `profiles`의 `display_name`과 `avatar_url`을 붙여 작성자를 보여 줍니다. 손님은 읽고, 글 남기기는 `/login`을 거친 뒤에만 열립니다.
 
-글 아래 댓글은 `hobby_comments`에 평평하게 쌓입니다(답글 없음). 읽기는 열려 있고, 남기거나 고치거나 거두는 일은 로그인한 본인만 할 수 있습니다. 본문은 1–1000자의 평범한 글만 담습니다. 손님은 댓글을 읽고, 남기기는 `/login`을 거친 뒤에만 열립니다. 스키마는 `supabase/migrations/20260914032224_hobby_comments.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 실행하면 됩니다.
+글 아래 댓글은 `hobby_comments`에 쌓입니다. 맨 위 댓글 아래에만 한 겹의 답글을 달 수 있고, 답글의 답글은 없습니다. 읽기는 열려 있고, 남기거나 고치거나 거두는 일은 로그인한 본인만 할 수 있습니다. 본문은 1–1000자의 평범한 글만 담습니다. 손님은 댓글과 답글을 읽고, 남기기는 `/login`을 거친 뒤에만 열립니다. 글 카드의 댓글 수는 답글을 포함한 전체 행입니다. 부모 댓글을 거두면 아래 답글도 함께 사라집니다. 스키마는 `supabase/migrations/20260914032224_hobby_comments.sql`과 `supabase/migrations/20260914073400_hobby_comment_replies.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 실행하면 됩니다.
 
 글에 붙인 사진은 공개 버킷 `post-images`에 `{user.id}/` 아래로 올린 뒤, 문단과 같은 순서로 `hobby_posts.content`(jsonb)에 담습니다.
 
