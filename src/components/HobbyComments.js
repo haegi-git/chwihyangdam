@@ -8,6 +8,8 @@ import { formatDate } from "@/lib/dates";
 import {
   COMMENT_BODY_MAX,
   commentWasEdited,
+  groupHobbyCommentThreads,
+  isTopLevelComment,
   trimCommentBody,
 } from "@/lib/hobbies";
 import { loginHref } from "@/lib/paths";
@@ -22,11 +24,15 @@ export default function HobbyComments({
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState("");
   const [editDraft, setEditDraft] = useState("");
+  const [replyingToId, setReplyingToId] = useState("");
+  const [replyDraft, setReplyDraft] = useState("");
   const [pending, setPending] = useState("");
   const [error, setError] = useState("");
 
   const configured = isSupabaseConfigured();
   const signedIn = Boolean(currentUserId);
+  const threads = groupHobbyCommentThreads(comments);
+  const loginNext = `/hobbies/post/${postId}`;
 
   function fail(message) {
     setPending("");
@@ -46,11 +52,37 @@ export default function HobbyComments({
 
     if (!user) {
       setPending("");
-      router.replace(loginHref(`/hobbies/post/${postId}`));
+      router.replace(loginHref(loginNext));
       return null;
     }
 
     return { supabase, user };
+  }
+
+  async function insertComment(body, parentId = null) {
+    const session = await requireUser();
+
+    if (!session) {
+      return false;
+    }
+
+    const row = {
+      post_id: postId,
+      author_id: session.user.id,
+      body,
+    };
+
+    if (parentId) {
+      row.parent_id = parentId;
+    }
+
+    const { error: insertError } = await session.supabase.from("hobby_comments").insert(row);
+
+    if (insertError) {
+      return false;
+    }
+
+    return true;
   }
 
   async function handleCreate(event) {
@@ -71,19 +103,9 @@ export default function HobbyComments({
     setPending("create");
     setError("");
 
-    const session = await requireUser();
+    const saved = await insertComment(body);
 
-    if (!session) {
-      return;
-    }
-
-    const { error: insertError } = await session.supabase.from("hobby_comments").insert({
-      post_id: postId,
-      author_id: session.user.id,
-      body,
-    });
-
-    if (insertError) {
+    if (!saved) {
       fail("댓글을 남기지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
       return;
     }
@@ -93,7 +115,40 @@ export default function HobbyComments({
     router.refresh();
   }
 
+  async function handleReply(event, parentId) {
+    event.preventDefault();
+
+    const body = trimCommentBody(replyDraft);
+
+    if (!body) {
+      setError("한 줄을 적어 주세요.");
+      return;
+    }
+
+    if (body.length > COMMENT_BODY_MAX) {
+      setError(`댓글은 ${COMMENT_BODY_MAX}자까지 담을 수 있습니다.`);
+      return;
+    }
+
+    setPending(`reply:${parentId}`);
+    setError("");
+
+    const saved = await insertComment(body, parentId);
+
+    if (!saved) {
+      fail("답글을 남기지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+      return;
+    }
+
+    setReplyDraft("");
+    setReplyingToId("");
+    setPending("");
+    router.refresh();
+  }
+
   function startEdit(comment) {
+    setReplyingToId("");
+    setReplyDraft("");
     setEditingId(comment.id);
     setEditDraft(comment.body);
     setError("");
@@ -102,6 +157,18 @@ export default function HobbyComments({
   function cancelEdit() {
     setEditingId("");
     setEditDraft("");
+  }
+
+  function startReply(commentId) {
+    cancelEdit();
+    setReplyingToId(commentId);
+    setReplyDraft("");
+    setError("");
+  }
+
+  function cancelReply() {
+    setReplyingToId("");
+    setReplyDraft("");
   }
 
   async function handleEdit(event) {
@@ -147,14 +214,21 @@ export default function HobbyComments({
     router.refresh();
   }
 
-  async function handleDelete(commentId) {
-    const confirmed = window.confirm("이 댓글을 거두어 둘까요? 글에서 사라집니다.");
+  async function handleDelete(comment, replyCount = 0) {
+    const isReply = !isTopLevelComment(comment);
+    const confirmed = window.confirm(
+      isReply
+        ? "이 답글을 거두어 둘까요? 글에서 사라집니다."
+        : replyCount > 0
+          ? "이 댓글을 거두어 둘까요? 아래에 달린 답글도 함께 사라집니다."
+          : "이 댓글을 거두어 둘까요? 글에서 사라집니다.",
+    );
 
     if (!confirmed) {
       return;
     }
 
-    setPending(`delete:${commentId}`);
+    setPending(`delete:${comment.id}`);
     setError("");
 
     const session = await requireUser();
@@ -166,7 +240,7 @@ export default function HobbyComments({
     const { error: deleteError } = await session.supabase
       .from("hobby_comments")
       .delete()
-      .eq("id", commentId)
+      .eq("id", comment.id)
       .eq("author_id", session.user.id);
 
     if (deleteError) {
@@ -174,9 +248,32 @@ export default function HobbyComments({
       return;
     }
 
+    if (replyingToId === comment.id) {
+      cancelReply();
+    }
+
+    if (editingId === comment.id) {
+      cancelEdit();
+    }
+
     setPending("");
     router.refresh();
   }
+
+  const commentEntryProps = {
+    currentUserId,
+    signedIn,
+    loginNext,
+    pending,
+    editingId,
+    editDraft,
+    setEditDraft,
+    onStartEdit: startEdit,
+    onCancelEdit: cancelEdit,
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+    onStartReply: startReply,
+  };
 
   return (
     <section
@@ -188,86 +285,53 @@ export default function HobbyComments({
         {comments.length ? `댓글 ${comments.length}` : "댓글"}
       </h2>
 
-      {comments.length ? (
+      {threads.length ? (
         <ol className="mt-8 divide-y divide-line/80">
-          {comments.map((comment) => {
-            const isOwner = currentUserId && currentUserId === comment.author_id;
-            const isEditing = editingId === comment.id;
-            const deleting = pending === `delete:${comment.id}`;
+          {threads.map(({ comment, replies }) => {
+            const isReplying = replyingToId === comment.id;
+            const showReplyLane = replies.length > 0 || isReplying;
 
             return (
               <li key={comment.id} className="py-6 first:pt-2">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-soft">
-                  <HobbyAuthorLink author={comment.author} authorId={comment.author_id} />
-                  <span aria-hidden="true">·</span>
-                  <time dateTime={comment.created_at}>{formatDate(comment.created_at)}</time>
-                  {commentWasEdited(comment) ? (
-                    <>
-                      <span aria-hidden="true">·</span>
-                      <span>다듬음</span>
-                    </>
-                  ) : null}
-                </div>
+                <CommentEntry
+                  comment={comment}
+                  allowReply={isTopLevelComment(comment)}
+                  isReplying={isReplying}
+                  replyCount={replies.length}
+                  {...commentEntryProps}
+                />
 
-                {isEditing ? (
-                  <form onSubmit={handleEdit} className="mt-4">
-                    <label className="sr-only" htmlFor={`hobby-comment-edit-${comment.id}`}>
-                      댓글 고치기
-                    </label>
-                    <textarea
-                      id={`hobby-comment-edit-${comment.id}`}
-                      value={editDraft}
-                      rows={3}
-                      className="field-quiet resize-y rounded-2xl px-4 py-3"
-                      maxLength={COMMENT_BODY_MAX}
-                      disabled={pending === "edit"}
-                      onChange={(event) =>
-                        setEditDraft(event.target.value.slice(0, COMMENT_BODY_MAX))
-                      }
-                    />
-                    <p className="mt-2 text-xs tracking-wide text-ink-soft">
-                      {trimCommentBody(editDraft).length}/{COMMENT_BODY_MAX}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="submit"
-                        className="btn-quiet disabled:opacity-60"
-                        disabled={pending === "edit"}
-                      >
-                        {pending === "edit" ? "담는 중…" : "담기"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-ghost disabled:opacity-60"
-                        onClick={cancelEdit}
-                        disabled={pending === "edit"}
-                      >
-                        그만두기
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <p className="mt-4 whitespace-pre-wrap leading-8 text-ink-soft">{comment.body}</p>
-                )}
+                {showReplyLane ? (
+                  <div className="mt-5 ml-1 space-y-5 border-l border-line/80 pl-5 md:pl-6">
+                    {replies.length ? (
+                      <ol className="space-y-5">
+                        {replies.map((reply) => (
+                          <li key={reply.id}>
+                            <CommentEntry
+                              comment={reply}
+                              allowReply={false}
+                              {...commentEntryProps}
+                            />
+                          </li>
+                        ))}
+                      </ol>
+                    ) : null}
 
-                {isOwner && !isEditing ? (
-                  <div className="mt-4 flex flex-wrap gap-4">
-                    <button
-                      type="button"
-                      className="text-sm text-sage-deep underline-offset-8 transition-colors duration-500 hover:underline disabled:opacity-50"
-                      onClick={() => startEdit(comment)}
-                      disabled={Boolean(pending)}
-                    >
-                      고치기
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm text-sage-deep underline-offset-8 transition-colors duration-500 hover:underline disabled:opacity-50"
-                      onClick={() => handleDelete(comment.id)}
-                      disabled={Boolean(pending)}
-                    >
-                      {deleting ? "거두는 중…" : "거두기"}
-                    </button>
+                    {isReplying ? (
+                      <CommentComposer
+                        id={`hobby-comment-reply-${comment.id}`}
+                        label="답글"
+                        placeholder="짧은 답을 남겨 주세요."
+                        value={replyDraft}
+                        rows={3}
+                        pending={pending === `reply:${comment.id}`}
+                        submitLabel="답글 남기기"
+                        submittingLabel="담는 중…"
+                        onChange={setReplyDraft}
+                        onSubmit={(event) => handleReply(event, comment.id)}
+                        onCancel={cancelReply}
+                      />
+                    ) : null}
                   </div>
                 ) : null}
               </li>
@@ -287,46 +351,192 @@ export default function HobbyComments({
       ) : null}
 
       {signedIn ? (
-        <form
+        <CommentComposer
+          id="hobby-comment-body"
+          className={comments.length ? "mt-8 border-t border-line/80 pt-8" : "mt-8"}
+          label="한마디"
+          placeholder="짧은 한마디를 남겨 주세요."
+          value={draft}
+          rows={4}
+          pending={pending === "create"}
+          submitLabel="댓글 남기기"
+          submittingLabel="담는 중…"
+          onChange={setDraft}
           onSubmit={handleCreate}
-          className={`${comments.length ? "mt-8 border-t border-line/80 pt-8" : "mt-8"}`}
-        >
-          <label className="block text-sm text-ink-soft" htmlFor="hobby-comment-body">
-            한마디
-          </label>
-          <textarea
-            id="hobby-comment-body"
-            value={draft}
-            rows={4}
-            className="field-quiet mt-2 resize-y rounded-2xl px-4 py-3"
-            placeholder="짧은 한마디를 남겨 주세요."
-            maxLength={COMMENT_BODY_MAX}
-            disabled={pending === "create"}
-            onChange={(event) => setDraft(event.target.value.slice(0, COMMENT_BODY_MAX))}
-          />
-          <p className="mt-2 text-xs tracking-wide text-ink-soft">
-            {trimCommentBody(draft).length}/{COMMENT_BODY_MAX}
-          </p>
-          <button
-            type="submit"
-            className="btn-quiet mt-6 disabled:opacity-60"
-            disabled={pending === "create"}
-          >
-            {pending === "create" ? "담는 중…" : "댓글 남기기"}
-          </button>
-        </form>
+        />
       ) : (
         <div
-          className={`${comments.length ? "mt-8 border-t border-line/80 pt-8" : "mt-8"}`}
+          className={comments.length ? "mt-8 border-t border-line/80 pt-8" : "mt-8"}
         >
           <p className="leading-8 text-ink-soft">
             들어와 있으면 이 글에 한마디를 남길 수 있습니다.
           </p>
-          <Link href={loginHref(`/hobbies/post/${postId}`)} className="btn-quiet mt-6">
+          <Link href={loginHref(loginNext)} className="btn-quiet mt-6">
             들어와 댓글 남기기
           </Link>
         </div>
       )}
     </section>
+  );
+}
+
+function CommentEntry({
+  comment,
+  allowReply = false,
+  isReplying = false,
+  replyCount = 0,
+  currentUserId,
+  signedIn,
+  loginNext,
+  pending,
+  editingId,
+  editDraft,
+  setEditDraft,
+  onStartEdit,
+  onCancelEdit,
+  onEdit,
+  onDelete,
+  onStartReply,
+}) {
+  const isOwner = currentUserId && currentUserId === comment.author_id;
+  const isEditing = editingId === comment.id;
+  const deleting = pending === `delete:${comment.id}`;
+  const showOwnerActions = isOwner && !isEditing;
+  const showReplyAction = allowReply && !isEditing && !isReplying;
+  const showActions = showOwnerActions || showReplyAction;
+
+  return (
+    <article>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-soft">
+        <HobbyAuthorLink author={comment.author} authorId={comment.author_id} />
+        <span aria-hidden="true">·</span>
+        <time dateTime={comment.created_at}>{formatDate(comment.created_at)}</time>
+        {commentWasEdited(comment) ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>다듬음</span>
+          </>
+        ) : null}
+      </div>
+
+      {isEditing ? (
+        <CommentComposer
+          id={`hobby-comment-edit-${comment.id}`}
+          className="mt-4"
+          label={allowReply ? "댓글 고치기" : "답글 고치기"}
+          labelClassName="sr-only"
+          value={editDraft}
+          rows={3}
+          pending={pending === "edit"}
+          submitLabel="담기"
+          submittingLabel="담는 중…"
+          onChange={setEditDraft}
+          onSubmit={onEdit}
+          onCancel={onCancelEdit}
+        />
+      ) : (
+        <p className="mt-4 whitespace-pre-wrap leading-8 text-ink-soft">{comment.body}</p>
+      )}
+
+      {showActions ? (
+        <div className="mt-4 flex flex-wrap gap-4">
+          {showOwnerActions ? (
+            <>
+              <button
+                type="button"
+                className="text-sm text-sage-deep underline-offset-8 transition-colors duration-500 hover:underline disabled:opacity-50"
+                onClick={() => onStartEdit(comment)}
+                disabled={Boolean(pending)}
+              >
+                고치기
+              </button>
+              <button
+                type="button"
+                className="text-sm text-sage-deep underline-offset-8 transition-colors duration-500 hover:underline disabled:opacity-50"
+                onClick={() => onDelete(comment, replyCount)}
+                disabled={Boolean(pending)}
+              >
+                {deleting ? "거두는 중…" : "거두기"}
+              </button>
+            </>
+          ) : null}
+          {showReplyAction ? (
+            signedIn ? (
+              <button
+                type="button"
+                className="text-sm text-sage-deep underline-offset-8 transition-colors duration-500 hover:underline disabled:opacity-50"
+                onClick={() => onStartReply(comment.id)}
+                disabled={Boolean(pending)}
+              >
+                답글
+              </button>
+            ) : (
+              <Link
+                href={loginHref(loginNext)}
+                className="text-sm text-sage-deep underline-offset-8 transition-colors duration-500 hover:underline"
+              >
+                답글
+              </Link>
+            )
+          ) : null}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function CommentComposer({
+  id,
+  className = "",
+  label,
+  labelClassName = "block text-sm text-ink-soft",
+  placeholder,
+  value,
+  rows = 3,
+  pending = false,
+  submitLabel,
+  submittingLabel,
+  onChange,
+  onSubmit,
+  onCancel,
+}) {
+  return (
+    <form onSubmit={onSubmit} className={className}>
+      <label className={labelClassName} htmlFor={id}>
+        {label}
+      </label>
+      <textarea
+        id={id}
+        value={value}
+        rows={rows}
+        className={`field-quiet resize-y rounded-2xl px-4 py-3 ${labelClassName.includes("sr-only") ? "" : "mt-2"}`}
+        placeholder={placeholder}
+        maxLength={COMMENT_BODY_MAX}
+        disabled={pending}
+        onChange={(event) => onChange(event.target.value.slice(0, COMMENT_BODY_MAX))}
+      />
+      <p className="mt-2 text-xs tracking-wide text-ink-soft">
+        {trimCommentBody(value).length}/{COMMENT_BODY_MAX}
+      </p>
+      <div className={`flex flex-wrap gap-2 ${onCancel ? "mt-4" : ""}`}>
+        <button
+          type="submit"
+          className={`btn-quiet disabled:opacity-60 ${onCancel ? "" : "mt-6"}`}
+          disabled={pending}
+        >
+          {pending ? submittingLabel : submitLabel}
+        </button>
+        {onCancel ? (
+          <button
+            type="button"
+            className="btn-ghost disabled:opacity-60"
+            onClick={onCancel}
+            disabled={pending}
+          >
+            그만두기
+          </button>
+        ) : null}
+      </div>
+    </form>
   );
 }

@@ -4,7 +4,7 @@ const UUID_PATTERN =
 const POST_SELECT =
   "id, title, body, content, image_urls, created_at, updated_at, author_id, hobby_tag_id, hobby_tags ( id, slug, name ), hobby_comments(count)";
 
-const COMMENT_SELECT = "id, post_id, author_id, body, created_at, updated_at";
+const COMMENT_SELECT = "id, post_id, parent_id, author_id, body, created_at, updated_at";
 
 export const COMMENT_BODY_MAX = 1000;
 
@@ -36,6 +36,47 @@ export function commentWasEdited(comment) {
   }
 
   return new Date(comment.updated_at).getTime() - new Date(comment.created_at).getTime() > 1000;
+}
+
+export function isTopLevelComment(comment) {
+  return !comment?.parent_id;
+}
+
+export function groupHobbyCommentThreads(comments) {
+  const list = Array.isArray(comments) ? comments : [];
+  const repliesByParent = new Map();
+  const topLevel = [];
+
+  for (const comment of list) {
+    if (comment?.parent_id) {
+      const replies = repliesByParent.get(comment.parent_id) ?? [];
+      replies.push(comment);
+      repliesByParent.set(comment.parent_id, replies);
+    } else {
+      topLevel.push(comment);
+    }
+  }
+
+  const nestedUnder = new Set();
+  const threads = topLevel.map((comment) => {
+    nestedUnder.add(comment.id);
+    return {
+      comment,
+      replies: repliesByParent.get(comment.id) ?? [],
+    };
+  });
+
+  for (const [parentId, replies] of repliesByParent) {
+    if (nestedUnder.has(parentId)) {
+      continue;
+    }
+
+    for (const comment of replies) {
+      threads.push({ comment, replies: [] });
+    }
+  }
+
+  return threads;
 }
 
 export async function fetchHobbyTags(supabase) {
