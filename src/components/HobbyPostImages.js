@@ -1,7 +1,10 @@
 import { normalizePostImageUrls } from "@/lib/post-images";
 
-export default function HobbyPostImages({ urls, compact = false }) {
-  const images = normalizePostImageUrls(urls);
+export default function HobbyPostImages({ urls, compact = false, limit }) {
+  const images = normalizePostImageUrls(urls).slice(
+    0,
+    Number.isFinite(limit) && limit > 0 ? limit : undefined,
+  );
 
   if (!images.length) {
     return null;

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
 import HobbyPostActions from "@/components/HobbyPostActions";
-import HobbyPostImages from "@/components/HobbyPostImages";
+import HobbyPostBody from "@/components/HobbyPostBody";
 import PageFrame from "@/components/PageFrame";
 import { formatDate } from "@/lib/dates";
 import { fetchHobbyPostById, isPostId } from "@/lib/hobbies";
+import { imageUrlsFromBlocks, blocksFromPost, uniquePostImageUrls } from "@/lib/post-content";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -86,15 +87,15 @@ export default async function HobbyPostPage({ params }) {
           <span aria-hidden="true">·</span>
           <time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
         </div>
-        <p className="mt-8 whitespace-pre-wrap text-lg leading-9 text-ink-soft">
-          {post.body}
-        </p>
-        <HobbyPostImages urls={post.image_urls} />
+        <HobbyPostBody post={post} />
         {isOwner ? (
           <HobbyPostActions
             postId={post.id}
             tagSlug={tag?.slug || ""}
-            imageUrls={post.image_urls}
+            imageUrls={uniquePostImageUrls(
+              post.image_urls,
+              imageUrlsFromBlocks(blocksFromPost(post)),
+            )}
           />
         ) : null}
       </article>

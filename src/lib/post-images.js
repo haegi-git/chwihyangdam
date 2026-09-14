@@ -1,6 +1,6 @@
 export const POST_IMAGES_BUCKET = "post-images";
 export const POST_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-export const POST_IMAGE_MAX_COUNT = 4;
+export const POST_IMAGE_MAX_COUNT = 8;
 
 const POST_IMAGE_EXTENSIONS = {
   "image/jpeg": "jpg",
