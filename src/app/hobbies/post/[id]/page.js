@@ -1,10 +1,16 @@
 import Link from "next/link";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
+import HobbyComments from "@/components/HobbyComments";
 import HobbyPostActions from "@/components/HobbyPostActions";
 import HobbyPostBody from "@/components/HobbyPostBody";
 import PageFrame from "@/components/PageFrame";
 import { formatDate } from "@/lib/dates";
-import { fetchHobbyPostById, isPostId } from "@/lib/hobbies";
+import {
+  commentCountOf,
+  fetchHobbyCommentsForPost,
+  fetchHobbyPostById,
+  isPostId,
+} from "@/lib/hobbies";
 import { imageUrlsFromBlocks, blocksFromPost, uniquePostImageUrls } from "@/lib/post-content";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -57,11 +63,14 @@ export default async function HobbyPostPage({ params }) {
     );
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [{ data: authData }, comments] = await Promise.all([
+    supabase.auth.getUser(),
+    fetchHobbyCommentsForPost(supabase, post.id),
+  ]);
+  const user = authData.user;
   const tag = post.hobby_tags;
   const isOwner = user?.id === post.author_id;
+  const commentCount = comments.length || commentCountOf(post);
 
   return (
     <PageFrame narrow>
@@ -86,6 +95,14 @@ export default async function HobbyPostPage({ params }) {
           <HobbyAuthorLink author={post.author} authorId={post.author_id} />
           <span aria-hidden="true">·</span>
           <time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
+          {commentCount > 0 ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <a href="#comments" className="text-sage-deep underline-offset-8 hover:underline">
+                댓글 {commentCount}
+              </a>
+            </>
+          ) : null}
         </div>
         <HobbyPostBody post={post} />
         {isOwner ? (
@@ -99,6 +116,12 @@ export default async function HobbyPostPage({ params }) {
           />
         ) : null}
       </article>
+
+      <HobbyComments
+        postId={post.id}
+        comments={comments}
+        currentUserId={user?.id ?? null}
+      />
     </PageFrame>
   );
 }

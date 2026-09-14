@@ -2,7 +2,11 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const POST_SELECT =
-  "id, title, body, content, image_urls, created_at, updated_at, author_id, hobby_tag_id, hobby_tags ( id, slug, name )";
+  "id, title, body, content, image_urls, created_at, updated_at, author_id, hobby_tag_id, hobby_tags ( id, slug, name ), hobby_comments(count)";
+
+const COMMENT_SELECT = "id, post_id, author_id, body, created_at, updated_at";
+
+export const COMMENT_BODY_MAX = 1000;
 
 export function isPostId(value) {
   return typeof value === "string" && UUID_PATTERN.test(value);
@@ -15,6 +19,23 @@ export function authorLabel(author) {
 export function postCountOf(tag) {
   const row = Array.isArray(tag?.hobby_posts) ? tag.hobby_posts[0] : null;
   return Number(row?.count ?? 0);
+}
+
+export function commentCountOf(post) {
+  const row = Array.isArray(post?.hobby_comments) ? post.hobby_comments[0] : null;
+  return Number(row?.count ?? 0);
+}
+
+export function trimCommentBody(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+export function commentWasEdited(comment) {
+  if (!comment?.created_at || !comment?.updated_at) {
+    return false;
+  }
+
+  return new Date(comment.updated_at).getTime() - new Date(comment.created_at).getTime() > 1000;
 }
 
 export async function fetchHobbyTags(supabase) {
@@ -111,15 +132,30 @@ export async function fetchHobbyPostById(supabase, id) {
   return post ?? null;
 }
 
-async function attachAuthors(supabase, posts) {
-  if (!posts.length) {
+export async function fetchHobbyCommentsForPost(supabase, postId) {
+  const { data, error } = await supabase
+    .from("hobby_comments")
+    .select(COMMENT_SELECT)
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("hobby_comments", error);
     return [];
   }
 
-  const ids = [...new Set(posts.map((post) => post.author_id).filter(Boolean))];
+  return attachAuthors(supabase, data ?? []);
+}
+
+async function attachAuthors(supabase, rows) {
+  if (!rows.length) {
+    return [];
+  }
+
+  const ids = [...new Set(rows.map((row) => row.author_id).filter(Boolean))];
 
   if (!ids.length) {
-    return posts.map((post) => ({ ...post, author: null }));
+    return rows.map((row) => ({ ...row, author: null }));
   }
 
   const { data, error } = await supabase
@@ -128,14 +164,14 @@ async function attachAuthors(supabase, posts) {
     .in("id", ids);
 
   if (error) {
-    console.error("hobby post authors", error);
-    return posts.map((post) => ({ ...post, author: null }));
+    console.error("hobby authors", error);
+    return rows.map((row) => ({ ...row, author: null }));
   }
 
   const byId = new Map((data ?? []).map((profile) => [profile.id, profile]));
 
-  return posts.map((post) => ({
-    ...post,
-    author: byId.get(post.author_id) ?? null,
+  return rows.map((row) => ({
+    ...row,
+    author: byId.get(row.author_id) ?? null,
   }));
 }
