@@ -6,9 +6,28 @@ import { isAdminUser } from "@/lib/profiles";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = {
-  title: "살펴보기",
-};
+export async function generateMetadata() {
+  if (!isSupabaseConfigured()) {
+    return { title: "살펴보기" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { title: "자리" };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return { title: isAdminUser(profile) ? "살펴보기" : "자리" };
+}
 
 export default async function AdminReportsPage() {
   if (!isSupabaseConfigured()) {
