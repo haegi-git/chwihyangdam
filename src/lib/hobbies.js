@@ -2,9 +2,10 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const POST_SELECT =
-  "id, title, body, content, image_urls, created_at, updated_at, author_id, hobby_tag_id, hobby_tags ( id, slug, name ), hobby_comments(count)";
+  "id, title, body, content, image_urls, created_at, updated_at, author_id, hobby_tag_id, hidden_at, hide_reason, hobby_tags ( id, slug, name ), hobby_comments(count)";
 
-const COMMENT_SELECT = "id, post_id, parent_id, author_id, body, created_at, updated_at";
+const COMMENT_SELECT =
+  "id, post_id, parent_id, author_id, body, created_at, updated_at, hidden_at, hide_reason";
 
 export const COMMENT_BODY_MAX = 1000;
 

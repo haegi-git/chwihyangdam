@@ -1,9 +1,11 @@
 import Link from "next/link";
+import HiddenNotice from "@/components/HiddenNotice";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
 import HobbyComments from "@/components/HobbyComments";
 import HobbyPostActions from "@/components/HobbyPostActions";
 import HobbyPostBody from "@/components/HobbyPostBody";
 import PageFrame from "@/components/PageFrame";
+import ReportControl from "@/components/ReportControl";
 import { formatDate } from "@/lib/dates";
 import {
   commentCountOf,
@@ -82,6 +84,7 @@ export default async function HobbyPostPage({ params }) {
       </Link>
 
       <article className="paper-sheet rise-in rise-in-2 mt-8 rounded-[1.85rem] p-7 md:p-10">
+        {post.hidden_at ? <HiddenNotice className="mb-6" /> : null}
         {tag?.slug ? (
           <Link
             href={`/hobbies/${tag.slug}`}
@@ -114,7 +117,16 @@ export default async function HobbyPostPage({ params }) {
               imageUrlsFromBlocks(blocksFromPost(post)),
             )}
           />
-        ) : null}
+        ) : (
+          <div className="mt-10">
+            <ReportControl
+              targetType="post"
+              targetId={post.id}
+              currentUserId={user?.id ?? null}
+              authorId={post.author_id}
+            />
+          </div>
+        )}
       </article>
 
       <HobbyComments

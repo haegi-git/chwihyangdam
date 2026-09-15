@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
+import HiddenNotice from "@/components/HiddenNotice";
+import ReportControl from "@/components/ReportControl";
 import { formatDate } from "@/lib/dates";
 import {
   COMMENT_BODY_MAX,
@@ -403,10 +405,12 @@ function CommentEntry({
   const deleting = pending === `delete:${comment.id}`;
   const showOwnerActions = isOwner && !isEditing;
   const showReplyAction = allowReply && !isEditing && !isReplying;
-  const showActions = showOwnerActions || showReplyAction;
+  const showReport = !isOwner && !isEditing;
+  const showActions = showOwnerActions || showReplyAction || showReport;
 
   return (
     <article>
+      {comment.hidden_at ? <HiddenNotice className="mb-4" /> : null}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-soft">
         <HobbyAuthorLink author={comment.author} authorId={comment.author_id} />
         <span aria-hidden="true">·</span>
@@ -478,6 +482,14 @@ function CommentEntry({
                 답글
               </Link>
             )
+          ) : null}
+          {showReport ? (
+            <ReportControl
+              targetType="comment"
+              targetId={comment.id}
+              currentUserId={currentUserId}
+              authorId={comment.author_id}
+            />
           ) : null}
         </div>
       ) : null}

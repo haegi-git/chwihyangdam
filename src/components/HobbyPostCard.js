@@ -1,5 +1,6 @@
 import Link from "next/link";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
+import HiddenNotice from "@/components/HiddenNotice";
 import HobbyPostImages from "@/components/HobbyPostImages";
 import { formatDate } from "@/lib/dates";
 import { commentCountOf } from "@/lib/hobbies";
@@ -12,6 +13,7 @@ export default function HobbyPostCard({ post, index = 0, showTag = false }) {
     <article
       className={`paper-sheet rise-in rise-in-${(index % 6) + 1} rounded-[1.85rem] p-7 md:p-8`}
     >
+      {post.hidden_at ? <HiddenNotice className="mb-5" /> : null}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-soft">
         <HobbyAuthorLink author={post.author} authorId={post.author_id} />
         <span aria-hidden="true">·</span>
