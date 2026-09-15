@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   PROFILE_UPDATED_EVENT,
+  isAdminUser,
   profileAvatarUrl,
   profileLabel,
 } from "@/lib/profiles";
@@ -32,7 +33,7 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
 
       supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select("display_name, avatar_url, is_admin")
         .eq("id", nextUser.id)
         .maybeSingle()
         .then(({ data }) => {
@@ -115,6 +116,7 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
   const name = profileLabel(profile, user);
   const photo = profileAvatarUrl(profile, user);
   const initial = name.slice(0, 1);
+  const admin = isAdminUser(profile);
 
   return (
     <div
@@ -141,6 +143,19 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
           {name}
         </span>
       </Link>
+      {admin ? (
+        <Link
+          href="/admin/reports"
+          className={
+            isMenu
+              ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
+              : "rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep"
+          }
+          onClick={onNavigate}
+        >
+          살펴보기
+        </Link>
+      ) : null}
       <button
         type="button"
         className={

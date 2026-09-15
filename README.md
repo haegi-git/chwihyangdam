@@ -26,8 +26,14 @@ npm run dev
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 공개 anon(publishable) 키 |
+| `XAI_API_KEY` | (선택) xAI 키. 있으면 운영함 초안 의견에 사용 |
+| `OPENAI_API_KEY` | (선택) OpenAI 키. xAI 키가 없을 때만 사용 |
+| `XAI_MODEL` | (선택) 기본 `grok-4` |
+| `OPENAI_MODEL` | (선택) 기본 `gpt-4o-mini` |
 
 비밀 키·service role 키는 넣지 않습니다. `.env.local`은 Git에 올리지 마세요.
+
+운영함의 AI 초안은 `XAI_API_KEY`가 있으면 xAI(`https://api.x.ai/v1`, OpenAI 호환)를 쓰고, 없으면 `OPENAI_API_KEY`를 씁니다. 둘 다 없으면 살펴보기 페이지에서 수동 결정만 할 수 있습니다. 키가 있어도 사람을 자동으로 막거나 정지하지 않습니다.
 
 ## 인증 (Supabase)
 
@@ -82,6 +88,7 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | `/login` | Google·카카오 로그인 |
 | `/profile` | 내 프로필 (닉네임·소개·사진 수정, `public.profiles`) |
 | `/profile/[id]` | 다른 사람의 닉네임·소개·사진과 남긴 취미 글 (읽기 전용) |
+| `/admin/reports` | 운영함. `profiles.is_admin`인 분만. `/admin/moderation`도 같은 자리 |
 | `/auth/callback` | OAuth 코드 교환 후 원래 자리로 이동 |
 
 ## 프로필
@@ -112,6 +119,36 @@ Supabase 대시보드 → Authentication → URL Configuration:
 `body`에는 문단만 이어 붙여 목록 미리보기에 쓰고, `image_urls`에는 같은 순서의 사진 URL을 넣어 카드 썸네일과 스토리지 정리에 씁니다. 한 글에 여덟 장까지, jpeg·png·webp·gif, 장당 5MB입니다. `content`가 비어 있거나 형식이 다른 예전 글은 `body` 다음에 `image_urls`를 이어 보여 줍니다.
 
 스키마 변경은 `supabase/migrations/20260914000000_hobby_posts_content.sql`을 Supabase SQL Editor에서 실행하면 됩니다.
+
+## 살펴보기 (신고·가림)
+
+취향담은 싸우지 않는 취미 자리입니다. 로그인한 사람은 남의 글·댓글에 **신고**를 남길 수 있습니다. 내 글은 신고할 수 없고, 하루에 열 번 정도만 부탁할 수 있습니다. 같은 대상은 한 번만 담깁니다.
+
+다섯 명이 같은 글(또는 댓글)을 살펴 달라고 하면 그 내용은 `hidden_at`으로 잠시 가려지고, `/admin/reports` 운영함에 올라옵니다. 작성자와 운영하는 분만 가려진 글을 보며, 위에 「커뮤니티 안내에 따라 잠시 가려졌어요」가 붙습니다. 다른 사람에게는 RLS로 보이지 않습니다.
+
+운영하는 분은 문제없음(다시 보이기), 가리기 유지, 삭제만 고릅니다. 사람을 하루 정지하거나 막지는 않습니다. AI는 초안 의견만 적습니다.
+
+스키마는 `supabase/migrations/20260915040736_moderation_reports_auto_hide.sql`과 `supabase/migrations/20260915043000_moderation_operator_actions.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 순서대로 실행하면 됩니다.
+
+### 로컬에서 살펴보기
+
+1. `.env.local`에 Supabase URL·anon 키를 넣습니다.
+2. (선택) AI 초안을 받으려면 같은 파일에 `XAI_API_KEY` 또는 `OPENAI_API_KEY`를 넣습니다. xAI 키가 있으면 그쪽을 먼저 씁니다.
+3. `npm run dev` 후 로그인합니다.
+4. 운영함은 `profiles.is_admin = true`인 계정만 열립니다. 로컬/SQL Editor에서 본인 프로필을 켜 주세요.
+
+```sql
+update public.profiles
+set is_admin = true
+where id = auth.uid(); -- 또는 본인 프로필 UUID
+```
+
+연결된 프로젝트의 운영 계정(닉네임 대머리, `db87bca6-6c17-4fb2-b499-533a09a3a0be`)은 이미 켜져 있습니다.
+
+5. 다른 계정으로 남의 글·댓글에서 「신고」를 고르고 이유를 보냅니다. 같은 글을 다시 보내면 이미 살펴 달라는 안내가 뜹니다.
+6. 서로 다른 다섯 명이 같은 대상을 신고하면 글이 가려지고 `/admin/reports`에 올라옵니다. 운영 계정으로 문제없음 / 가리기 유지 / 삭제를 고릅니다.
+7. AI 키가 있으면 다섯 번째 신고 뒤 또는 운영함의 「AI 의견 받기」로 초안이 채워집니다. 키가 없으면 「AI 키를 .env.local에 넣으면 초안 의견을 받을 수 있어요」만 보이고, 수동 결정은 그대로 됩니다.
+8. 운영이 아닌 계정으로 `/admin/reports`를 열면 빈 자리만 보입니다.
 
 ## 스크립트
 

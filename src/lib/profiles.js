@@ -16,6 +16,10 @@ export function isProfileId(value) {
   return typeof value === "string" && UUID_PATTERN.test(value);
 }
 
+export function isAdminUser(profile) {
+  return Boolean(profile?.is_admin);
+}
+
 export function displayNameFromAuth(user) {
   if (!user) {
     return "";
