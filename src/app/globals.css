@@ -136,6 +136,78 @@ body::before {
   background: color-mix(in srgb, var(--sage) 70%, var(--line));
 }
 
+.diary-calendar {
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 88%, white), var(--card));
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 70%, transparent) inset,
+    0 28px 50px -36px rgba(62, 52, 38, 0.45);
+}
+
+.diary-day {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 2.7rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease;
+}
+
+@media (min-width: 768px) {
+  .diary-day {
+    min-height: 3.15rem;
+  }
+}
+
+.diary-day:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sage-mist) 55%, transparent);
+}
+
+.diary-day.is-muted {
+  color: color-mix(in srgb, var(--ink-soft) 58%, transparent);
+}
+
+.diary-day.is-today:not(.is-selected) {
+  color: var(--sage-deep);
+  font-family: var(--font-serif);
+}
+
+.diary-day.is-selected {
+  background: var(--sage-mist);
+  color: var(--sage-deep);
+}
+
+.diary-day.is-selected:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sage-mist) 88%, var(--leaf));
+}
+
+.diary-day.is-out,
+.diary-day:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.diary-day-mark {
+  position: absolute;
+  bottom: 0.32rem;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: var(--sage);
+}
+
+.diary-day.is-selected .diary-day-mark {
+  background: var(--sage-deep);
+}
+
 .btn-quiet,
 .btn-ghost {
   display: inline-flex;

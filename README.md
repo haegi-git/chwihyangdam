@@ -8,7 +8,7 @@
 - Tailwind CSS
 - Supabase Auth (Google·Kakao OAuth, PKCE)
 
-취미 태그와 글은 Supabase의 `hobby_tags`·`hobby_posts`에서 읽습니다. 작성자 이름은 `profiles`와 이어집니다. 일기는 아직 브라우저 목 데이터입니다.
+취미 태그와 글은 Supabase의 `hobby_tags`·`hobby_posts`에서 읽습니다. 작성자 이름은 `profiles`와 이어집니다. 일기는 `diary_entries`에 날짜별로 쌓이며, 본인만 읽고 고칩니다.
 
 ## 시작하기
 
@@ -83,7 +83,7 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | `/hobbies/[slug]/new` | 글 쓰기 (로그인 필요, 손님은 `/login`으로) |
 | `/hobbies/post/[id]` | 글 상세와 댓글. 작성자 이름은 `/profile/[id]`로 이어짐 |
 | `/hobbies/post/[id]/edit` | 본인 글 고치기 |
-| `/diary` | 일기 목록과 새 일기 작성 (브라우저에서만 동작) |
+| `/diary` | 달력 일기 (`diary_entries`). 로그인 후 날짜를 눌러 읽고 남김. 비공개 |
 | `/friends` | 가까운 친구 / 일기 공유 자리 (준비 중) |
 | `/login` | Google·카카오 로그인 |
 | `/profile` | 내 프로필 (닉네임·소개·사진 수정, `public.profiles`) |
@@ -119,6 +119,14 @@ Supabase 대시보드 → Authentication → URL Configuration:
 `body`에는 문단만 이어 붙여 목록 미리보기에 쓰고, `image_urls`에는 같은 순서의 사진 URL을 넣어 카드 썸네일과 스토리지 정리에 씁니다. 한 글에 여덟 장까지, jpeg·png·webp·gif, 장당 5MB입니다. `content`가 비어 있거나 형식이 다른 예전 글은 `body` 다음에 `image_urls`를 이어 보여 줍니다.
 
 스키마 변경은 `supabase/migrations/20260914000000_hobby_posts_content.sql`을 Supabase SQL Editor에서 실행하면 됩니다.
+
+## 일기
+
+`/diary`는 이번 달 달력을 먼저 보여 줍니다. 날짜를 누르면 그 날의 글을 읽고, 남기고, 고치고, 거둘 수 있습니다. `entry_date`는 브라우저의 달력 날짜(YYYY-MM-DD)로만 다루어, 타임존이 하루를 밀지 않게 합니다. 앞뒤 약 2년만 넘길 수 있습니다. 한 사용자·한 날에 글은 하나이며, `(author_id, entry_date)` 고유 제약과 upsert로 맞춥니다.
+
+읽기·쓰기는 로그인한 본인 행만 가능합니다(`auth.uid() = author_id`). 손님에게는 가짜 목록 없이 로그인 안내만 보입니다. 친구와 나누는 일은 아직 없습니다.
+
+스키마는 `supabase/migrations/20260915054103_diary_entries.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 실행하면 됩니다.
 
 ## 살펴보기 (신고·가림)
 
