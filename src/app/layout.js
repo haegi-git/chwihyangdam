@@ -22,7 +22,7 @@ export const metadata = {
     template: "%s · 취향담",
   },
   description:
-    "조용한 취향을 위한 작은 자리. 마이너 취미 커뮤니티와 기본적으로 비공개인 일기.",
+    "조용한 취향을 위한 작은 자리. 마이너 취미 커뮤니티와 기본적으로 비공개인 일기. 친구가 고른 날만 나눕니다.",
 };
 
 export default function RootLayout({ children }) {

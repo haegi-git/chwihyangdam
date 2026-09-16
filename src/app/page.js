@@ -16,15 +16,15 @@ const rooms = [
     href: "/diary",
     index: "02",
     title: "일기",
-    body: "오늘의 결은 기본적으로 나만 봅니다. 남겨 둔 글은 조용히 쌓입니다.",
+    body: "오늘의 결은 기본적으로 나만 봅니다. 친구에게 나눌 날은 따로 고릅니다.",
     label: "일기 쓰기",
   },
   {
     href: "/friends",
     index: "03",
     title: "친구",
-    body: "가까운 이와 일기를 나누는 자리는 천천히 열 예정입니다.",
-    label: "준비 중인 자리",
+    body: "요청을 주고받은 뒤에, 친구가 체크한 날의 일기만 읽습니다.",
+    label: "친구 자리",
   },
 ];
 
@@ -46,7 +46,7 @@ export default async function HomePage() {
           </h1>
           <p className="rise-in rise-in-2 mt-8 max-w-xl text-lg leading-9 text-ink-soft">
             잘 드러내지 않는 취미를 모아 두고, 일기는 기본적으로 혼자 봅니다.
-            가까운 친구와 나누는 일은 서두르지 않고 나중에 이어집니다.
+            가까운 친구와 나누는 일은 체크한 날만 열립니다.
           </p>
           <div className="rise-in rise-in-3 mt-10 flex flex-col gap-3 sm:flex-row">
             <Link href="/hobbies" className="btn-quiet">
@@ -67,7 +67,7 @@ export default async function HomePage() {
             <p className="display mt-6 text-3xl text-ink md:text-4xl">
               혼자 보는 일기,
               <br />
-              서두르지 않는 친구.
+              고른 날만 나누는 친구.
             </p>
             <p className="mt-6 leading-8 text-ink-soft">
               이곳에선 소리가 작아도 충분합니다. 취향은 모으고, 마음은 잠시 접어
