@@ -1,6 +1,6 @@
 # 취향담 (Chwihyangdam)
 
-조용한 취향을 위한 작은 자리입니다. 마이너·마니아 취미를 둘러보고, 기본적으로 비공개인 일기를 남길 수 있습니다. 가까운 친구와 나누는 기능은 나중에 이어집니다.
+조용한 취향을 위한 작은 자리입니다. 마이너·마니아 취미를 둘러보고, 기본적으로 비공개인 일기를 남길 수 있습니다. 가까운 친구와는, 작가가 고른 날만 나눕니다.
 
 ## 기술
 
@@ -8,7 +8,7 @@
 - Tailwind CSS
 - Supabase Auth (Google·Kakao OAuth, PKCE)
 
-취미 태그와 글은 Supabase의 `hobby_tags`·`hobby_posts`에서 읽습니다. 작성자 이름은 `profiles`와 이어집니다. 일기는 `diary_entries`에 날짜별로 쌓이며, 본인만 읽고 고칩니다.
+취미 태그와 글은 Supabase의 `hobby_tags`·`hobby_posts`에서 읽습니다. 작성자 이름은 `profiles`와 이어집니다. 일기는 `diary_entries`에 날짜별로 쌓이며, 본인이 쓰고 고칩니다. `shared_with_friends`를 켠 날만 받아 둔 친구가 읽습니다.
 
 ## 시작하기
 
@@ -83,11 +83,12 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | `/hobbies/[slug]/new` | 글 쓰기 (로그인 필요, 손님은 `/login`으로) |
 | `/hobbies/post/[id]` | 글 상세와 댓글. 작성자 이름은 `/profile/[id]`로 이어짐 |
 | `/hobbies/post/[id]/edit` | 본인 글 고치기 |
-| `/diary` | 달력 일기 (`diary_entries`). 로그인 후 날짜를 눌러 읽고 남김. 비공개 |
-| `/friends` | 가까운 친구 / 일기 공유 자리 (준비 중) |
+| `/diary` | 달력 일기 (`diary_entries`). 로그인 후 날짜를 눌러 읽고 남김. 기본 비공개. **친구에게 공유**를 켠 날만 친구가 읽음 |
+| `/friends` | 친구 요청·수락·거절·끊기. 닉네임 검색 또는 프로필에서 요청 |
+| `/friends/[id]` | 받아 둔 친구가 나눈 날만 읽는 달력 (읽기 전용) |
 | `/login` | Google·카카오 로그인 |
 | `/profile` | 내 프로필 (닉네임·소개·사진 수정, `public.profiles`) |
-| `/profile/[id]` | 다른 사람의 닉네임·소개·사진과 남긴 취미 글 (읽기 전용) |
+| `/profile/[id]` | 다른 사람의 닉네임·소개·사진과 남긴 취미 글. 친구 요청·나눈 일기 입구 |
 | `/admin/reports` | 운영함. `profiles.is_admin`인 분만. `/admin/moderation`도 같은 자리 |
 | `/auth/callback` | OAuth 코드 교환 후 원래 자리로 이동 |
 
@@ -124,9 +125,27 @@ Supabase 대시보드 → Authentication → URL Configuration:
 
 `/diary`는 이번 달 달력을 먼저 보여 줍니다. 날짜를 누르면 그 날의 글을 읽고, 남기고, 고치고, 거둘 수 있습니다. `entry_date`는 브라우저의 달력 날짜(YYYY-MM-DD)로만 다루어, 타임존이 하루를 밀지 않게 합니다. 앞뒤 약 2년만 넘길 수 있습니다. 한 사용자·한 날에 글은 하나이며, `(author_id, entry_date)` 고유 제약과 upsert로 맞춥니다.
 
-읽기·쓰기는 로그인한 본인 행만 가능합니다(`auth.uid() = author_id`). 손님에게는 가짜 목록 없이 로그인 안내만 보입니다. 친구와 나누는 일은 아직 없습니다.
+읽기·쓰기는 로그인한 본인 행이 기본입니다. 손님이 날짜를 눌러도 가짜 목록 없이 로그인 안내만 보입니다. 친구에게 보일 날은 글마다 **친구에게 공유**를 켜야 합니다. 기본값은 꺼져 있습니다.
 
-스키마는 `supabase/migrations/20260915054103_diary_entries.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 실행하면 됩니다.
+스키마는 `supabase/migrations/20260915054103_diary_entries.sql`과 `supabase/migrations/20260916012905_friends_and_diary_sharing.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 순서대로 실행하면 됩니다.
+
+## 친구
+
+친구는 먼저 요청하고 받아 둔 뒤에만 성립합니다. `friendships`는 `pending`·`accepted`·`declined`이며, 같은 두 사람 사이 행은 한 줄만 있습니다. 받아 둔 친구는 `/friends` 목록이나 `/profile/[id]`에서 **나눈 일기**로 들어갑니다. 달력에는 작가가 공유를 켠 날만 점이 찍히고, 혼자 보는 날·빈 날을 눌러도 본문은 열리지 않습니다. 친구가 아닌 사람은 RLS 때문에 일기 행을 읽을 수 없습니다.
+
+`public.are_friends(a, b)`는 받아 둔 친구인지 보는 헬퍼입니다. 일기 SELECT 정책이 이 함수를 씁니다. 고치거나 거두는 일은 여전히 본인만 가능합니다.
+
+손님은 `/friends`와 `/friends/[id]`에서 로그인 안내만 봅니다. 검색은 `profiles.display_name`과 프로필 주소(`/profile/{uuid}`)를 받습니다. 취미 글의 작성자 이름도 `/profile/[id]`로 이어지므로 그 자리에서 **친구 요청**을 보낼 수 있습니다.
+
+### 두 계정으로 확인하기
+
+1. 계정 A로 로그인하고 `/diary`에서 하루는 **친구에게 공유**를 켜서 남기고, 다른 하루는 끄고 남깁니다.
+2. 계정 B로 로그인합니다. 취미 글이나 `/friends` 검색으로 A의 프로필을 연 뒤 **친구 요청**을 보냅니다.
+3. 계정 A로 `/friends`에서 받은 요청을 수락합니다. 거절·요청 취소·친구 끊기도 같은 자리에서 됩니다.
+4. 계정 B로 `/friends`의 **나눈 일기** 또는 `/friends/{A의 id}`를 엽니다. 공유를 켠 날만 본문이 보이고, 끄고 남긴 날은 「나누지 않은 날」입니다.
+5. 친구가 아닌 세 번째 계정(또는 로그아웃)으로는 A의 일기 본문이 열리지 않습니다.
+
+스키마는 `supabase/migrations/20260916012905_friends_and_diary_sharing.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 실행하면 됩니다.
 
 ## 살펴보기 (신고·가림)
 

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import DiaryCalendar from "@/components/DiaryCalendar";
+import ShareBadge from "@/components/ShareBadge";
 import {
   DIARY_BODY_MAX,
+  DIARY_SELECT,
   DIARY_TITLE_MAX,
-  DIARY_WEEKDAYS,
   clampKeyToMonth,
   diaryRange,
   diaryWasEdited,
@@ -28,8 +30,6 @@ import {
 import { loginHref } from "@/lib/paths";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-const DIARY_SELECT = "id, author_id, entry_date, title, body, created_at, updated_at";
-
 export default function DiaryBoard() {
   const configured = isSupabaseConfigured();
   const today = useSyncExternalStore(
@@ -45,6 +45,7 @@ export default function DiaryBoard() {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [shared, setShared] = useState(false);
   const [pending, setPending] = useState("");
   const [error, setError] = useState("");
 
@@ -192,6 +193,7 @@ export default function DiaryBoard() {
     setEditing(false);
     setTitle("");
     setBody("");
+    setShared(false);
     setError("");
   }
 
@@ -199,6 +201,7 @@ export default function DiaryBoard() {
     setEditing(true);
     setTitle(entry?.title ?? "");
     setBody(entry?.body ?? "");
+    setShared(Boolean(entry?.shared_with_friends));
     setError("");
   }
 
@@ -237,6 +240,7 @@ export default function DiaryBoard() {
       entry_date: selectedKey,
       title: nextTitle,
       body: nextBody,
+      shared_with_friends: Boolean(shared),
       updated_at: new Date().toISOString(),
     };
 
@@ -320,8 +324,8 @@ export default function DiaryBoard() {
           <p className="kicker justify-center">아직 비어 있습니다</p>
           <h2 className="display mt-8 text-4xl text-ink md:text-5xl">먼저 들어와 주세요</h2>
           <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
-            일기는 들어와 있는 분만 보고 남길 수 있습니다. 달력에 조용히 쌓이며,
-            다른 사람에게는 열리지 않습니다.
+            일기는 들어와 있는 분만 보고 남길 수 있습니다. 적어 둔 글은 기본적으로
+            나만 보며, 친구에게 나눌 날은 따로 고를 수 있습니다.
           </p>
           <Link href={loginHref("/diary")} className="btn-quiet mt-10">
             로그인
@@ -350,102 +354,21 @@ export default function DiaryBoard() {
     <div>
       <Intro />
 
-      <section className="diary-calendar rise-in rise-in-3 mt-10 rounded-[1.85rem] p-5 md:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-            onClick={() => moveMonth(-1)}
-            disabled={!canPrev}
-            aria-label="이전 달"
-          >
-            이전 달
-          </button>
-          <div className="text-center">
-            <h2 className="display text-2xl text-ink md:text-3xl">{monthTitle}</h2>
-            <p className="mt-1 text-xs tracking-wide text-ink-soft">
-              오늘을 기준으로 앞뒤 2년만 열립니다
-            </p>
-          </div>
-          <button
-            type="button"
-            className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-            onClick={() => moveMonth(1)}
-            disabled={!canNext}
-            aria-label="다음 달"
-          >
-            다음 달
-          </button>
-        </div>
-
-        {!isCurrentMonth ? (
-          <div className="mt-3 flex justify-center">
-            <button
-              type="button"
-              className="rounded-full px-3 py-1 text-sm text-sage-deep transition-colors duration-500 hover:bg-sage-mist/80"
-              onClick={goToToday}
-            >
-              오늘로
-            </button>
-          </div>
-        ) : null}
-
-        <table className="mt-6 w-full table-fixed border-separate border-spacing-1">
-          <caption className="sr-only">{monthTitle} 일기 달력</caption>
-          <thead>
-            <tr>
-              {DIARY_WEEKDAYS.map((label) => (
-                <th
-                  key={label}
-                  scope="col"
-                  className="pb-2 text-center text-xs font-normal tracking-wide text-ink-soft"
-                >
-                  {label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {weeks.map((week) => (
-              <tr key={week[0].key}>
-                {week.map((cell) => {
-                  const inRange = isKeyInRange(cell.key, range.minKey, range.maxKey);
-                  const hasEntry = Boolean(entries[cell.key]);
-                  const selected = cell.key === selectedKey;
-                  const isToday = cell.key === range.todayKey;
-
-                  return (
-                    <td key={cell.key}>
-                      <button
-                        type="button"
-                        className={[
-                          "diary-day",
-                          cell.inMonth ? "" : "is-muted",
-                          selected ? "is-selected" : "",
-                          isToday ? "is-today" : "",
-                          !inRange ? "is-out" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        onClick={() => selectDay(cell.key, cell.inMonth)}
-                        disabled={!inRange}
-                        aria-pressed={selected}
-                        aria-current={isToday ? "date" : undefined}
-                        aria-label={`${formatDiaryDate(cell.key)}${
-                          hasEntry ? ", 일기 있음" : ", 비어 있음"
-                        }`}
-                      >
-                        <span>{cell.day}</span>
-                        {hasEntry ? <span className="diary-day-mark" aria-hidden="true" /> : null}
-                      </button>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <DiaryCalendar
+        monthTitle={monthTitle}
+        weeks={weeks}
+        range={range}
+        selectedKey={selectedKey}
+        entries={entries}
+        canPrev={canPrev}
+        canNext={canNext}
+        isCurrentMonth={isCurrentMonth}
+        onPrev={() => moveMonth(-1)}
+        onNext={() => moveMonth(1)}
+        onToday={goToToday}
+        onSelect={selectDay}
+        caption={`${monthTitle} 일기 달력`}
+      />
 
       {loading && !selectedEntry ? (
         <p className="mt-8 text-sm text-ink-soft" role="status">
@@ -459,10 +382,12 @@ export default function DiaryBoard() {
           editing={editing || !selectedEntry}
           title={title}
           body={body}
+          shared={selectedEntry && !editing ? Boolean(selectedEntry.shared_with_friends) : shared}
           pending={pending}
           error={error}
           onTitleChange={setTitle}
           onBodyChange={setBody}
+          onSharedChange={setShared}
           onSubmit={handleSave}
           onEdit={() => openEditor(selectedEntry)}
           onCancel={closeEditor}
@@ -476,11 +401,12 @@ export default function DiaryBoard() {
 function Intro() {
   return (
     <div className="border-b border-line/80 pb-10">
-      <p className="kicker rise-in">비공개</p>
+      <p className="kicker rise-in">기본적으로 비공개</p>
       <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">나의 일기</h1>
       <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
-        적어 둔 글은 나만 봅니다. 날짜를 눌러 그날을 읽고 남길 수 있습니다.
-        가까운 친구와 나누는 기능은 나중에 이어질 예정입니다.
+        날짜를 눌러 그날을 읽고 남길 수 있습니다. 적어 둔 글은 나만 보며,{" "}
+        <strong className="font-medium text-ink">친구에게 공유</strong>를 켠 날만
+        받아 둔 친구에게 열립니다.
       </p>
     </div>
   );
@@ -492,10 +418,12 @@ function DayPanel({
   editing,
   title,
   body,
+  shared,
   pending,
   error,
   onTitleChange,
   onBodyChange,
+  onSharedChange,
   onSubmit,
   onEdit,
   onCancel,
@@ -557,6 +485,22 @@ function DayPanel({
           {body.trim().length}/{DIARY_BODY_MAX}
         </p>
 
+        <label className="share-check mt-6" htmlFor="diary-share">
+          <input
+            id="diary-share"
+            type="checkbox"
+            checked={shared}
+            onChange={(event) => onSharedChange(event.target.checked)}
+            disabled={busy}
+          />
+          <span>
+            <span className="block text-sm text-ink">친구에게 공유</span>
+            <span className="mt-1 block text-sm leading-6 text-ink-soft">
+              켜 둔 날만 받아 둔 친구가 읽을 수 있습니다. 기본은 나만 봅니다.
+            </span>
+          </span>
+        </label>
+
         {error ? (
           <p className="mt-4 text-sm text-clay" role="alert">
             {error}
@@ -587,9 +531,7 @@ function DayPanel({
       <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
         <time dateTime={dateKey}>{formatDiaryDate(dateKey)}</time>
         <span aria-hidden="true">·</span>
-        <span className="rounded-full bg-sage-mist px-2.5 py-1 text-xs tracking-wide text-sage-deep">
-          비공개
-        </span>
+        <ShareBadge shared={Boolean(entry.shared_with_friends)} />
         {diaryWasEdited(entry) ? (
           <>
             <span aria-hidden="true">·</span>

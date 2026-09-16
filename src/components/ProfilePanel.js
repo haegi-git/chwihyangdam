@@ -381,12 +381,20 @@ export default function ProfilePanel() {
         ) : null}
 
         <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href={`/profile/${user.id}`}
-            className="text-sm text-sage-deep underline-offset-8 hover:underline"
-          >
-            남들이 보는 자리
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <Link
+              href={`/profile/${user.id}`}
+              className="text-sm text-sage-deep underline-offset-8 hover:underline"
+            >
+              남들이 보는 자리
+            </Link>
+            <Link
+              href="/friends"
+              className="text-sm text-sage-deep underline-offset-8 hover:underline"
+            >
+              친구 자리
+            </Link>
+          </div>
           <button type="submit" className="btn-quiet" disabled={pending || uploading}>
             {pending ? "담는 중…" : "저장하기"}
           </button>

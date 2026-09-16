@@ -2,6 +2,8 @@ export const DIARY_TITLE_MAX = 80;
 export const DIARY_BODY_MAX = 8000;
 export const DIARY_YEAR_SPAN = 2;
 export const DIARY_WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+export const DIARY_SELECT =
+  "id, author_id, entry_date, title, body, shared_with_friends, created_at, updated_at";
 
 const DATE_KEY = /^(\d{4})-(\d{2})-(\d{2})$/;
 

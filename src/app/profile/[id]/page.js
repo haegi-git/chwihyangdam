@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FriendActions from "@/components/FriendActions";
 import HobbyPostCard from "@/components/HobbyPostCard";
 import PageFrame from "@/components/PageFrame";
 import { fetchHobbyPostsByAuthor } from "@/lib/hobbies";
@@ -53,9 +54,6 @@ export default async function PublicProfilePage({ params }) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, display_name, bio, avatar_url")
@@ -77,7 +75,6 @@ export default async function PublicProfilePage({ params }) {
   const name = profile.display_name?.trim() || "이름 없는 자리";
   const bio = profile.bio?.trim();
   const photo = profile.avatar_url?.trim();
-  const isOwn = user?.id === profile.id;
 
   return (
     <PageFrame>
@@ -88,8 +85,8 @@ export default async function PublicProfilePage({ params }) {
             프로필
           </h1>
           <p className="rise-in rise-in-2 mt-8 max-w-md text-lg leading-9 text-ink-soft">
-            남이 남긴 닉네임과 한 줄, 사진만 보입니다. 고치는 일은 본인만 할 수
-            있습니다.
+            남이 남긴 닉네임과 한 줄, 사진만 보입니다. 가까운 이라면 여기서 친구
+            요청을 보낼 수 있습니다.
           </p>
         </div>
 
@@ -119,15 +116,7 @@ export default async function PublicProfilePage({ params }) {
             {bio || "아직 한 줄이 없습니다."}
           </p>
 
-          {isOwn ? (
-            <Link href="/profile" className="btn-quiet mt-10">
-              내 프로필 고치기
-            </Link>
-          ) : (
-            <p className="mt-10 font-serif text-sm tracking-[0.22em] text-sage-deep">
-              읽기만 할 수 있습니다
-            </p>
-          )}
+          <FriendActions profileId={profile.id} returnTo={`/profile/${profile.id}`} />
         </section>
       </div>
 
