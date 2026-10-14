@@ -508,7 +508,7 @@ export default function HobbyPostForm({
           </div>
           <button
             type="button"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-line/90 bg-card/80 px-4 text-sm text-ink-soft transition-colors duration-500 hover:bg-sage-mist hover:text-ink disabled:opacity-50"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-line/90 bg-card/80 px-4 text-sm text-ink-soft transition-colors duration-500 hover:bg-sage-mist hover:text-ink disabled:opacity-50"
             onClick={handlePhotoButton}
             disabled={pending || remainingImages <= 0}
           >

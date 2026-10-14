@@ -28,7 +28,7 @@ export default function DiaryCalendar({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           onClick={onPrev}
           disabled={!canPrev}
           aria-label="이전 달"
@@ -43,7 +43,7 @@ export default function DiaryCalendar({
         </div>
         <button
           type="button"
-          className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           onClick={onNext}
           disabled={!canNext}
           aria-label="다음 달"
@@ -56,7 +56,7 @@ export default function DiaryCalendar({
         <div className="mt-3 flex justify-center">
           <button
             type="button"
-            className="rounded-full px-3 py-1 text-sm text-sage-deep transition-colors duration-500 hover:bg-sage-mist/80"
+            className="shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm text-sage-deep transition-colors duration-500 hover:bg-sage-mist/80"
             onClick={onToday}
           >
             오늘로

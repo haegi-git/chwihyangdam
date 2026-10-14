@@ -202,7 +202,7 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
                   {item.reasons.map((reason) => (
                     <li
                       key={reason.value}
-                      className="rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep"
+                      className="shrink-0 whitespace-nowrap rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep"
                     >
                       {reason.label} {reason.count}
                     </li>
