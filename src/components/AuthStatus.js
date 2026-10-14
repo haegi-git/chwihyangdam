@@ -157,11 +157,22 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
             살펴보기
           </Link>
           <Link
-            href="/admin/prefixes"
+            href="/admin/categories"
             className={
               isMenu
                 ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
                 : "hidden rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep sm:inline"
+            }
+            onClick={onNavigate}
+          >
+            분류
+          </Link>
+          <Link
+            href="/admin/hobbies"
+            className={
+              isMenu
+                ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
+                : "hidden rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep lg:inline"
             }
             onClick={onNavigate}
           >

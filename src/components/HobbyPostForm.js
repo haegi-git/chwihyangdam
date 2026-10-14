@@ -27,6 +27,14 @@ import {
   uploadPostImages,
   validatePostImageFile,
 } from "@/lib/post-images";
+import { composeHref } from "@/lib/board";
+import {
+  categoryChoices,
+  hobbyChoices,
+  initialCategoryId,
+  initialHobbyId,
+  postLabelWriteError,
+} from "@/lib/post-labels";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const TITLE_MAX = 80;
@@ -49,7 +57,8 @@ function localImageBlock(file) {
 export default function HobbyPostForm({
   mode = "create",
   post,
-  prefixes = [],
+  categories = [],
+  hobbies = [],
   cancelHref,
 }) {
   const router = useRouter();
@@ -58,14 +67,11 @@ export default function HobbyPostForm({
   const focusRef = useRef({ key: "", cursor: 0 });
   const pendingFocusRef = useRef(null);
   const paragraphNodes = useRef(new Map());
-  const activePrefixIds = new Set(prefixes.map((prefix) => prefix.id));
-  const preservedPrefixId =
-    post?.prefix_id && !activePrefixIds.has(post.prefix_id) ? post.prefix_id : "";
+  const categoryOptions = categoryChoices(post, categories);
+  const hobbyOptions = hobbyChoices(post, hobbies);
   const [title, setTitle] = useState(post?.title ?? "");
-  const [prefixId, setPrefixId] = useState(() =>
-    activePrefixIds.has(post?.prefix_id) ? post.prefix_id : "",
-  );
-  const [prefixTouched, setPrefixTouched] = useState(false);
+  const [categoryId, setCategoryId] = useState(() => initialCategoryId(post, categories));
+  const [hobbyId, setHobbyId] = useState(() => initialHobbyId(post, hobbies));
   const [blocks, setBlocks] = useState(() => composeBlocksFromPost(post));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -303,6 +309,11 @@ export default function HobbyPostForm({
     const nextTitle = title.trim().slice(0, TITLE_MAX);
     const nextBody = bodyFromBlocks(blocks);
 
+    if (!categoryId) {
+      setError("분류를 골라 주세요.");
+      return;
+    }
+
     if (!nextTitle || !nextBody) {
       setError("제목과 내용을 모두 적어 주세요.");
       return;
@@ -328,7 +339,9 @@ export default function HobbyPostForm({
 
     if (!user) {
       setPending(false);
-      const nextPath = isEdit ? `/hobbies/post/${post.id}/edit` : "/hobbies/new";
+      const nextPath = isEdit
+        ? `/hobbies/post/${post.id}/edit`
+        : composeHref({ categoryId, hobbyId });
       router.replace(loginHref(nextPath));
       return;
     }
@@ -359,7 +372,7 @@ export default function HobbyPostForm({
     const keptUrls = blocks.filter((block) => block.kind === "kept").map((block) => block.url);
     const droppedUrls = previousUrls.filter((url) => !keptUrls.includes(url));
 
-    const nextPrefixId = prefixId || (!prefixTouched && preservedPrefixId ? preservedPrefixId : null);
+    const nextHobbyId = hobbyId || null;
 
     if (isEdit) {
       const { error: updateError } = await supabase
@@ -369,7 +382,8 @@ export default function HobbyPostForm({
           body: nextBody,
           content,
           image_urls: imageUrls,
-          prefix_id: nextPrefixId,
+          category_id: categoryId,
+          hobby_tag_id: nextHobbyId,
           updated_at: new Date().toISOString(),
         })
         .eq("id", post.id)
@@ -377,7 +391,7 @@ export default function HobbyPostForm({
 
       if (updateError) {
         setPending(false);
-        setError("글을 고치지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+        setError(postLabelWriteError(updateError, "글을 고치지 못했습니다. 잠시 뒤 다시 시도해 주세요."));
         return;
       }
 
@@ -396,14 +410,15 @@ export default function HobbyPostForm({
         body: nextBody,
         content,
         image_urls: imageUrls,
-        prefix_id: nextPrefixId,
+        category_id: categoryId,
+        hobby_tag_id: nextHobbyId,
       })
       .select("id")
       .maybeSingle();
 
     if (insertError || !created?.id) {
       setPending(false);
-      setError("글을 남기지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+      setError(postLabelWriteError(insertError, "글을 남기지 못했습니다. 잠시 뒤 다시 시도해 주세요."));
       return;
     }
 
@@ -427,27 +442,44 @@ export default function HobbyPostForm({
           : "한 장의 종이에 적듯 쓰다가, 사진을 넣으면 커서 자리에 들어갑니다."}
       </p>
 
-      <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-prefix">
+      <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-category">
+        분류
+      </label>
+      <select
+        id="hobby-post-category"
+        value={categoryId}
+        onChange={(event) => setCategoryId(event.target.value)}
+        className="field-quiet mt-2 rounded-2xl px-4 py-3"
+        disabled={pending}
+        required
+      >
+        {categoryId ? null : <option value="">분류를 골라 주세요</option>}
+        {categoryOptions.map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </select>
+      <p className="mt-2 text-xs leading-6 text-ink-soft">글을 둘 칸입니다.</p>
+
+      <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-hobby">
         말머리
       </label>
       <select
-        id="hobby-post-prefix"
-        value={prefixId}
-        onChange={(event) => {
-          setPrefixTouched(true);
-          setPrefixId(event.target.value);
-        }}
+        id="hobby-post-hobby"
+        value={hobbyId}
+        onChange={(event) => setHobbyId(event.target.value)}
         className="field-quiet mt-2 rounded-2xl px-4 py-3"
         disabled={pending}
       >
         <option value="">선택 안 함</option>
-        {prefixes.map((prefix) => (
-          <option key={prefix.id} value={prefix.id}>
-            {prefix.name}
+        {hobbyOptions.map((hobby) => (
+          <option key={hobby.id} value={hobby.id}>
+            {hobby.name}
           </option>
         ))}
       </select>
-      <p className="mt-2 text-xs leading-6 text-ink-soft">없어도 됩니다. 종류는 운영하는 분이 더합니다.</p>
+      <p className="mt-2 text-xs leading-6 text-ink-soft">없어도 됩니다. 취미는 운영하는 분이 더합니다.</p>
 
       <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-title">
         제목

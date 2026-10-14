@@ -120,7 +120,7 @@ export default async function HomePage() {
         </div>
 
         <p className="rise-in rise-in-2 mt-8 max-w-xl leading-8 text-ink-soft">
-          취미 글은 한 게시판에 모입니다. 최근 글이 먼저 보이고, 말머리는 필요할 때만 붙습니다.
+          취미 글은 분류로 나뉘고, 말머리는 취미를 고를 때만 붙습니다.
         </p>
 
         {posts.length ? (

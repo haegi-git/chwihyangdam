@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import HobbyPostForm from "@/components/HobbyPostForm";
 import PageFrame from "@/components/PageFrame";
-import { fetchActivePrefixes } from "@/lib/hobbies";
+import { categoryQuery, composeHref, hobbyQuery, selectedActiveId } from "@/lib/board";
+import { fetchActiveCategories, fetchActiveHobbyTags } from "@/lib/hobbies";
 import { loginHref } from "@/lib/paths";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -11,7 +12,9 @@ export const metadata = {
   title: "글 남기기",
 };
 
-export default async function NewHobbyPostPage() {
+export default async function NewHobbyPostPage({ searchParams }) {
+  const params = await searchParams;
+
   if (!isSupabaseConfigured()) {
     return (
       <PageFrame narrow>
@@ -27,12 +30,22 @@ export default async function NewHobbyPostPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const [categories, hobbies] = await Promise.all([
+    fetchActiveCategories(supabase),
+    fetchActiveHobbyTags(supabase),
+  ]);
+  const categoryId = selectedActiveId(categoryQuery(params), categories);
+  const hobbyId = selectedActiveId(hobbyQuery(params), hobbies);
+  const nextPath = composeHref({ categoryId, hobbyId });
 
   if (!user) {
-    redirect(loginHref("/hobbies/new"));
+    redirect(loginHref(nextPath));
   }
 
-  const prefixes = await fetchActivePrefixes(supabase);
+  const draft =
+    categoryId || hobbyId
+      ? { category_id: categoryId || null, hobby_tag_id: hobbyId || null }
+      : undefined;
 
   return (
     <PageFrame narrow>
@@ -43,11 +56,17 @@ export default async function NewHobbyPostPage() {
         <p className="kicker rise-in">기록</p>
         <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">글 남기기</h1>
         <p className="rise-in rise-in-2 mt-6 leading-8 text-ink-soft">
-          취미 게시판에 짧은 기록을 남겨 둡니다. 누구나 읽을 수 있습니다.
+          취미 게시판에 짧은 기록을 남겨 둡니다. 분류는 고르고, 말머리는 없어도 됩니다.
         </p>
       </div>
       <div className="mt-10">
-        <HobbyPostForm mode="create" prefixes={prefixes} cancelHref="/hobbies" />
+        <HobbyPostForm
+          mode="create"
+          post={draft}
+          categories={categories}
+          hobbies={hobbies}
+          cancelHref="/hobbies"
+        />
       </div>
     </PageFrame>
   );

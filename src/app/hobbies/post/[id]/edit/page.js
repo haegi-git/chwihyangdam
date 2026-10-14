@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import HobbyPostForm from "@/components/HobbyPostForm";
 import PageFrame from "@/components/PageFrame";
-import { fetchActivePrefixes, fetchHobbyPostById, isPostId } from "@/lib/hobbies";
+import { fetchActiveCategories, fetchActiveHobbyTags, fetchHobbyPostById, isPostId } from "@/lib/hobbies";
 import { loginHref } from "@/lib/paths";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -62,7 +62,10 @@ export default async function EditHobbyPostPage({ params }) {
     redirect(`/hobbies/post/${post.id}`);
   }
 
-  const prefixes = await fetchActivePrefixes(supabase);
+  const [categories, hobbies] = await Promise.all([
+    fetchActiveCategories(supabase),
+    fetchActiveHobbyTags(supabase),
+  ]);
 
   return (
     <PageFrame narrow>
@@ -85,7 +88,8 @@ export default async function EditHobbyPostPage({ params }) {
         <HobbyPostForm
           mode="edit"
           post={post}
-          prefixes={prefixes}
+          categories={categories}
+          hobbies={hobbies}
           cancelHref={`/hobbies/post/${post.id}`}
         />
       </div>

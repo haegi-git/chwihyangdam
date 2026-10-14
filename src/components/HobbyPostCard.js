@@ -2,14 +2,16 @@ import Link from "next/link";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
 import HiddenNotice from "@/components/HiddenNotice";
 import HobbyPostImages from "@/components/HobbyPostImages";
-import PrefixMark from "@/components/PrefixMark";
+import HobbyMark from "@/components/HobbyMark";
+import { categoryName } from "@/lib/categories";
 import { formatDate } from "@/lib/dates";
 import { commentCountOf } from "@/lib/hobbies";
-import { prefixName } from "@/lib/prefixes";
+import { hobbyName } from "@/lib/hobby-tags";
 
 export default function HobbyPostCard({ post, index = 0 }) {
   const commentCount = commentCountOf(post);
-  const prefix = prefixName(post);
+  const hobby = hobbyName(post);
+  const category = categoryName(post);
 
   return (
     <article
@@ -20,6 +22,12 @@ export default function HobbyPostCard({ post, index = 0 }) {
         <HobbyAuthorLink author={post.author} authorId={post.author_id} />
         <span aria-hidden="true">·</span>
         <time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
+        {category ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>{category}</span>
+          </>
+        ) : null}
         {commentCount > 0 ? (
           <>
             <span aria-hidden="true">·</span>
@@ -37,7 +45,7 @@ export default function HobbyPostCard({ post, index = 0 }) {
           href={`/hobbies/post/${post.id}`}
           className="transition-colors duration-500 hover:text-sage-deep"
         >
-          <PrefixMark name={prefix} />
+          <HobbyMark name={hobby} />
           {post.title}
         </Link>
       </h3>

@@ -1,4 +1,4 @@
-export default function PrefixMark({ name }) {
+export default function HobbyMark({ name }) {
   if (!name) {
     return null;
   }

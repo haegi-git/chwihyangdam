@@ -2,7 +2,8 @@ import Link from "next/link";
 
 const items = [
   { href: "/admin/reports", label: "살펴보기" },
-  { href: "/admin/prefixes", label: "말머리" },
+  { href: "/admin/categories", label: "분류" },
+  { href: "/admin/hobbies", label: "말머리" },
 ];
 
 export default function AdminSectionNav({ current }) {
