@@ -6,9 +6,9 @@ import { blockErrorMessage, canBlock, unblockErrorMessage } from "@/lib/blocks";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 const BLOCK_CONFIRM =
-  "이 사람을 차단할까요? 서로의 친구 자리가 사라지고, 그 사람의 글과 댓글은 더 이상 보이지 않습니다.";
+  "이 사람을 차단할까요? 서로의 친구 자리가 사라지고, 서로의 글과 댓글이 더 이상 보이지 않습니다.";
 const UNBLOCK_CONFIRM =
-  "차단을 풀까요? 글과 댓글이 다시 보입니다. 친구 관계는 저절로 돌아오지 않습니다.";
+  "차단을 풀까요? 서로의 글과 댓글이 다시 보입니다. 친구 관계는 저절로 돌아오지 않습니다.";
 
 export default function BlockControl(props) {
   return (

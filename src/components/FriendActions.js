@@ -281,7 +281,7 @@ export default function FriendActions({ profileId, returnTo }) {
       <div className="flex flex-wrap gap-2">
         {blocked ? (
           <p className="w-full text-sm leading-7 text-ink-soft">
-            차단 중이라 글과 친구 요청이 닫혀 있습니다.
+            차단 중이라 서로의 글과 친구 요청이 닫혀 있습니다.
           </p>
         ) : null}
         {!blocked && relation === "accepted" ? (

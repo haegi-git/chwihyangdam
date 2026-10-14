@@ -2,12 +2,15 @@
 -- blocker_id can select/insert/delete their own rows. The blocked person
 -- cannot see who blocked them.
 --
--- SELECT on hobby_posts and hobby_comments hides authors the viewer has
--- blocked. A blocked author's top-level comment and the replies under it
--- are both omitted, so the thread does not dangle without its parent.
--- A reply written by a blocked author under someone else's comment is
--- omitted by itself. private.is_admin() still sees every row. anon
--- (auth.uid() is null) is unchanged.
+-- Content visibility is mutual. private.is_blocked_between(other) is
+-- security definer and true when auth.uid() and other appear in user_blocks
+-- in either direction. hobby_posts and hobby_comments SELECT use it, so the
+-- blocked person cannot read the blocker's rows through the Data API even
+-- though they cannot select user_blocks. A top-level comment by either
+-- party, and the replies under it, are both omitted so the thread does not
+-- dangle. A reply by either party under someone else's comment is omitted
+-- by itself. private.is_admin() still sees every row. anon (auth.uid() is
+-- null) is unchanged.
 --
 -- Inserting a block deletes the friendship either way. New friend requests
 -- either direction fail the friendships insert check (and the update check,
@@ -65,22 +68,23 @@ create index if not exists user_blocks_blocked_id_idx
   on public.user_blocks (blocked_id);
 
 comment on table public.user_blocks is
-  'One-way block. Only blocker_id may read the row. PK (blocker_id, blocked_id).';
+  'Block row is readable only by blocker_id. Post and comment visibility is mutual via private.is_blocked_between. PK (blocker_id, blocked_id).';
 
-create or replace function private.viewer_has_blocked(author_id uuid)
+create or replace function private.is_blocked_between(other uuid)
 returns boolean
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select author_id is not null
+  select other is not null
     and auth.uid() is not null
+    and other is distinct from auth.uid()
     and exists (
       select 1
       from public.user_blocks ub
-      where ub.blocker_id = auth.uid()
-        and ub.blocked_id = author_id
+      where (ub.blocker_id = auth.uid() and ub.blocked_id = other)
+         or (ub.blocker_id = other and ub.blocked_id = auth.uid())
     );
 $$;
 
@@ -96,7 +100,7 @@ as $$
       select 1
       from public.hobby_comments c
       where c.id = comment_id
-        and private.viewer_has_blocked(c.author_id)
+        and private.is_blocked_between(c.author_id)
     );
 $$;
 
@@ -133,8 +137,10 @@ begin
 end;
 $$;
 
-revoke all on function private.viewer_has_blocked(uuid) from public;
-grant execute on function private.viewer_has_blocked(uuid) to anon, authenticated, service_role;
+drop function if exists private.viewer_has_blocked(uuid);
+
+revoke all on function private.is_blocked_between(uuid) from public;
+grant execute on function private.is_blocked_between(uuid) to anon, authenticated, service_role;
 
 revoke all on function private.viewer_blocked_comment_author(uuid) from public;
 grant execute on function private.viewer_blocked_comment_author(uuid) to anon, authenticated, service_role;
@@ -189,7 +195,7 @@ create policy "Hobby posts are viewable by everyone"
     )
     and (
       (select private.is_admin())
-      or not private.viewer_has_blocked(author_id)
+      or not private.is_blocked_between(author_id)
     )
   );
 
@@ -206,7 +212,7 @@ create policy "Hobby comments are viewable by everyone"
     and (
       (select private.is_admin())
       or (
-        not private.viewer_has_blocked(author_id)
+        not private.is_blocked_between(author_id)
         and (
           parent_id is null
           or not private.viewer_blocked_comment_author(parent_id)

@@ -78,7 +78,7 @@ export default function BlockedList({ userId }) {
       <p className="kicker">조용히 가리기</p>
       <h2 className="display mt-5 text-3xl text-ink">차단 목록</h2>
       <p className="mt-4 text-sm leading-7 text-ink-soft">
-        차단하면 그 사람의 취미 글과 댓글이 보이지 않고, 서로 친구로 남을 수
+        차단하면 서로의 취미 글과 댓글이 보이지 않고, 서로 친구로 남을 수
         없습니다. 상대에게는 알리지 않습니다.
       </p>
 
