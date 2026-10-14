@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import BlockedList from "@/components/BlockedList";
 import {
   AVATAR_BUCKET,
   announceProfileUpdate,
@@ -282,9 +283,10 @@ export default function ProfilePanel() {
     <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
       <Intro />
 
+      <div className="rise-in rise-in-3 grid gap-6">
       <form
         onSubmit={handleSubmit}
-        className="paper-sheet rise-in rise-in-3 rounded-[2.2rem] px-8 py-10 md:px-12 md:py-14"
+        className="paper-sheet rounded-[2.2rem] px-8 py-10 md:px-12 md:py-14"
       >
         <div className="flex items-center gap-4">
           {photo ? (
@@ -400,6 +402,8 @@ export default function ProfilePanel() {
           </button>
         </div>
       </form>
+      <BlockedList userId={user.id} />
+      </div>
     </div>
   );
 }

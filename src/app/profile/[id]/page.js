@@ -2,6 +2,7 @@ import Link from "next/link";
 import FriendActions from "@/components/FriendActions";
 import HobbyPostCard from "@/components/HobbyPostCard";
 import PageFrame from "@/components/PageFrame";
+import { viewerHasBlocked } from "@/lib/blocks";
 import { fetchHobbyPostsByAuthor } from "@/lib/hobbies";
 import { isProfileId } from "@/lib/profiles";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -131,6 +132,24 @@ async function AuthorPosts({ authorId }) {
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const blocked = await viewerHasBlocked(supabase, user?.id, authorId);
+
+  if (blocked) {
+    return (
+      <section className="mt-16">
+        <div className="section-rule">
+          <span>남긴 글</span>
+        </div>
+        <p className="mt-8 leading-8 text-ink-soft">
+          차단한 사용자의 글은 보이지 않습니다.
+        </p>
+      </section>
+    );
+  }
+
   const posts = await fetchHobbyPostsByAuthor(supabase, authorId);
 
   if (!posts.length) {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import BlockControl from "@/components/BlockControl";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
 import HiddenNotice from "@/components/HiddenNotice";
 import ReportControl from "@/components/ReportControl";
@@ -484,12 +485,19 @@ function CommentEntry({
             )
           ) : null}
           {showReport ? (
-            <ReportControl
-              targetType="comment"
-              targetId={comment.id}
-              currentUserId={currentUserId}
-              authorId={comment.author_id}
-            />
+            <>
+              <ReportControl
+                targetType="comment"
+                targetId={comment.id}
+                currentUserId={currentUserId}
+                authorId={comment.author_id}
+              />
+              <BlockControl
+                profileId={comment.author_id}
+                currentUserId={currentUserId}
+                appearance="menu"
+              />
+            </>
           ) : null}
         </div>
       ) : null}

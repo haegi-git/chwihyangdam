@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import BlockControl from "@/components/BlockControl";
 import PersonFace from "@/components/PersonFace";
 import {
   FRIENDSHIP_SELECT,
@@ -26,6 +27,7 @@ export default function FriendsBoard() {
   const configured = isSupabaseConfigured();
   const [user, setUser] = useState(() => (configured ? undefined : null));
   const [friendships, setFriendships] = useState([]);
+  const [blockedIds, setBlockedIds] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState({ key: "", rows: [] });
@@ -66,6 +68,21 @@ export default function FriendsBoard() {
       }
       return next;
     });
+  }, []);
+
+  const loadBlocks = useCallback(async (userId) => {
+    const supabase = createClient();
+    const { data, error: loadError } = await supabase
+      .from("user_blocks")
+      .select("blocked_id")
+      .eq("blocker_id", userId);
+
+    if (loadError) {
+      setBlockedIds([]);
+      return;
+    }
+
+    setBlockedIds((data ?? []).map((row) => row.blocked_id).filter(Boolean));
   }, []);
 
   const loadFriendships = useCallback(
@@ -121,6 +138,7 @@ export default function FriendsBoard() {
 
       if (nextUser) {
         loadFriendships(nextUser.id);
+        loadBlocks(nextUser.id);
       }
     });
 
@@ -132,16 +150,18 @@ export default function FriendsBoard() {
 
       if (!nextUser) {
         setFriendships([]);
+        setBlockedIds([]);
         setLoaded(false);
       } else {
         loadFriendships(nextUser.id);
+        loadBlocks(nextUser.id);
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [configured, loadFriendships]);
+  }, [configured, loadBlocks, loadFriendships]);
 
   useEffect(() => {
     const term = sanitizeSearchTerm(query);
@@ -213,6 +233,7 @@ export default function FriendsBoard() {
 
     await work(supabase, currentUser);
     await loadFriendships(currentUser.id);
+    await loadBlocks(currentUser.id);
   }
 
   async function requestFriend(targetId) {
@@ -450,12 +471,17 @@ export default function FriendsBoard() {
                     profile={profile}
                     relation={relationOf(friendshipWith(friendships, user.id, profile.id), user.id)}
                     friendship={friendshipWith(friendships, user.id, profile.id)}
+                    blocked={blockedIds.includes(profile.id)}
                     pending={pending}
                     onRequest={() => requestFriend(profile.id)}
                     onAccept={acceptFriend}
                     onDecline={declineFriend}
                     onCancel={cancelRequest}
                     onUnfriend={unfriend}
+                    onBlocked={() => {
+                      loadFriendships(user.id);
+                      loadBlocks(user.id);
+                    }}
                   />
                 </li>
               ))}
@@ -491,9 +517,14 @@ export default function FriendsBoard() {
               profile={profiles[otherPartyId(friendship, user.id)]}
               relation="incoming"
               friendship={friendship}
+              blocked={blockedIds.includes(otherPartyId(friendship, user.id))}
               pending={pending}
               onAccept={acceptFriend}
               onDecline={declineFriend}
+              onBlocked={() => {
+                loadFriendships(user.id);
+                loadBlocks(user.id);
+              }}
             />
           )}
         />
@@ -509,8 +540,13 @@ export default function FriendsBoard() {
               profile={profiles[otherPartyId(friendship, user.id)]}
               relation="outgoing"
               friendship={friendship}
+              blocked={blockedIds.includes(otherPartyId(friendship, user.id))}
               pending={pending}
               onCancel={cancelRequest}
+              onBlocked={() => {
+                loadFriendships(user.id);
+                loadBlocks(user.id);
+              }}
             />
           )}
         />
@@ -526,8 +562,13 @@ export default function FriendsBoard() {
               profile={profiles[otherPartyId(friendship, user.id)]}
               relation="accepted"
               friendship={friendship}
+              blocked={blockedIds.includes(otherPartyId(friendship, user.id))}
               pending={pending}
               onUnfriend={unfriend}
+              onBlocked={() => {
+                loadFriendships(user.id);
+                loadBlocks(user.id);
+              }}
             />
           )}
         />
@@ -576,12 +617,14 @@ function FriendRow({
   profile,
   relation,
   friendship,
+  blocked = false,
   pending,
   onRequest,
   onAccept,
   onDecline,
   onCancel,
   onUnfriend,
+  onBlocked,
 }) {
   const busy = Boolean(pending);
   const otherId = profile?.id || otherPartyId(friendship, userId);
@@ -591,7 +634,7 @@ function FriendRow({
     <div className="flex flex-col gap-3 rounded-[1.4rem] border border-line/70 bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
       <PersonFace profile={profile || { id: otherId, display_name: name }} size="sm" />
       <div className="flex flex-wrap gap-2">
-        {relation === "accepted" && otherId ? (
+        {!blocked && relation === "accepted" && otherId ? (
           <>
             <Link href={friendDiaryHref(otherId)} className="btn-quiet !min-h-9 !px-4 text-sm">
               나눈 일기
@@ -606,7 +649,7 @@ function FriendRow({
             </button>
           </>
         ) : null}
-        {relation === "incoming" ? (
+        {!blocked && relation === "incoming" ? (
           <>
             <button
               type="button"
@@ -626,7 +669,7 @@ function FriendRow({
             </button>
           </>
         ) : null}
-        {relation === "outgoing" ? (
+        {!blocked && relation === "outgoing" ? (
           <button
             type="button"
             className="btn-ghost !min-h-9 !px-4 text-sm"
@@ -636,7 +679,8 @@ function FriendRow({
             {pending === `cancel:${friendship.id}` ? "거두는 중…" : "요청 취소"}
           </button>
         ) : null}
-        {relation === "none" || relation === "declined_by_me" || relation === "declined_by_them" ? (
+        {!blocked &&
+        (relation === "none" || relation === "declined_by_me" || relation === "declined_by_them") ? (
           <button
             type="button"
             className="btn-quiet !min-h-9 !px-4 text-sm"
@@ -645,6 +689,16 @@ function FriendRow({
           >
             {pending === `request:${otherId}` ? "보내는 중…" : "친구 요청"}
           </button>
+        ) : null}
+        {otherId ? (
+          <BlockControl
+            profileId={otherId}
+            currentUserId={userId}
+            blocked={blocked}
+            appearance="button"
+            disabled={busy}
+            onChanged={() => onBlocked?.()}
+          />
         ) : null}
       </div>
     </div>
