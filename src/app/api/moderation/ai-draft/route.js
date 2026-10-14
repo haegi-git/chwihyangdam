@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isPostId } from "@/lib/hobbies";
 import { draftModerationOpinion, isAiConfigured } from "@/lib/moderation-ai";
 import { isReportTargetType } from "@/lib/moderation";
+import { isAdminUser } from "@/lib/profiles";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,6 +18,16 @@ export async function POST(request) {
 
   if (!user) {
     return NextResponse.json({ ok: false, reason: "unauthorized" }, { status: 401 });
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError || !isAdminUser(profile)) {
+    return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
   }
 
   let payload = {};

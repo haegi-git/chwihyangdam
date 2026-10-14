@@ -24,7 +24,7 @@ import {
   subscribeDiaryDay,
   yearMonthOf,
 } from "@/lib/diary";
-import { displayLabel, friendDiaryHref, profileHref } from "@/lib/friends";
+import { acceptedWithFilter, displayLabel, friendDiaryHref, profileHref } from "@/lib/friends";
 import { loginHref } from "@/lib/paths";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -117,15 +117,18 @@ export default function FriendDiaryBoard({ authorId, author }) {
     let cancelled = false;
     const supabase = createClient();
 
-    Promise.all([
-      supabase.rpc("are_friends", { a: user.id, b: authorId }),
-      supabase
-        .from("user_blocks")
-        .select("blocked_id")
-        .eq("blocker_id", user.id)
-        .eq("blocked_id", authorId)
-        .maybeSingle(),
-    ]).then(([friendResult, blockResult]) => {
+    const friendFilter = acceptedWithFilter(user.id, authorId);
+    const friendLookup = friendFilter
+      ? supabase.from("friendships").select("id").or(friendFilter).limit(1).maybeSingle()
+      : Promise.resolve({ data: null, error: null });
+    const blockLookup = supabase
+      .from("user_blocks")
+      .select("blocked_id")
+      .eq("blocker_id", user.id)
+      .eq("blocked_id", authorId)
+      .maybeSingle();
+
+    Promise.all([friendLookup, blockLookup]).then(([friendResult, blockResult]) => {
       if (cancelled) {
         return;
       }

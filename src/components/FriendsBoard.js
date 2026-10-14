@@ -17,6 +17,7 @@ import {
   profileSearchPattern,
   relationOf,
   sanitizeSearchTerm,
+  sendFriendRequest,
   sortByName,
 } from "@/lib/friends";
 import { loginHref } from "@/lib/paths";
@@ -274,38 +275,23 @@ export default function FriendsBoard() {
         return;
       }
 
-      if (existing) {
-        const { error: retryError } = await supabase
-          .from("friendships")
-          .update({
-            requester_id: currentUser.id,
-            addressee_id: targetId,
-            status: "pending",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existing.id);
+      const { error: requestError } = await sendFriendRequest(
+        supabase,
+        currentUser.id,
+        targetId,
+        existing,
+      );
 
-        if (retryError) {
-          setError("다시 요청하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
-          return;
-        }
-
-        setNotice("친구 요청을 다시 보내 두었습니다.");
+      if (requestError) {
+        setError(
+          existing
+            ? "다시 요청하지 못했습니다. 잠시 뒤 다시 시도해 주세요."
+            : "요청을 보내지 못했습니다. 잠시 뒤 다시 시도해 주세요.",
+        );
         return;
       }
 
-      const { error: insertError } = await supabase.from("friendships").insert({
-        requester_id: currentUser.id,
-        addressee_id: targetId,
-        status: "pending",
-      });
-
-      if (insertError) {
-        setError("요청을 보내지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
-        return;
-      }
-
-      setNotice("친구 요청을 보내 두었습니다.");
+      setNotice(existing ? "친구 요청을 다시 보내 두었습니다." : "친구 요청을 보내 두었습니다.");
     });
 
     setPending("");

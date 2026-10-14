@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSafeNext } from "@/lib/paths";
+import { callbackRedirectBase, getSafeNext } from "@/lib/paths";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request) {
@@ -12,18 +12,14 @@ export async function GET(request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
+      const base = callbackRedirectBase({
+        origin,
+        forwardedHost: request.headers.get("x-forwarded-host"),
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+        isLocalEnv: process.env.NODE_ENV === "development",
+      });
 
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
-
-      if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      }
-
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${base}${next}`);
     }
   }
 

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  acceptedWithFilter,
   classifyFriendships,
+  friendRequestPlan,
   friendshipWith,
   looksLikeProfileLink,
   otherPartyId,
@@ -65,5 +67,34 @@ describe("friendship helpers", () => {
     );
     assert.equal(looksLikeProfileLink(them), them);
     assert.equal(looksLikeProfileLink("대머리"), "");
+  });
+
+  it("reopens a declined request without rewriting the parties", () => {
+    const declinedByThem = {
+      id: "row",
+      requester_id: me,
+      addressee_id: them,
+      status: "declined",
+    };
+    const declinedByMe = {
+      id: "row",
+      requester_id: them,
+      addressee_id: me,
+      status: "declined",
+    };
+
+    assert.equal(friendRequestPlan(null, me, them), "insert");
+    assert.equal(friendRequestPlan(declinedByThem, me, them), "reopen");
+    assert.equal(friendRequestPlan(declinedByMe, me, them), "replace");
+    assert.equal(
+      friendRequestPlan({ requester_id: me, addressee_id: them, status: "pending" }, me, them),
+      "ignore",
+    );
+    assert.equal(
+      friendRequestPlan({ requester_id: me, addressee_id: them, status: "accepted" }, me, them),
+      "ignore",
+    );
+    assert.equal(acceptedWithFilter(me, them).includes(them), true);
+    assert.equal(acceptedWithFilter(me, "not-a-uuid"), "");
   });
 });
