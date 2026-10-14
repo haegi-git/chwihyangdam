@@ -121,6 +121,69 @@ export function displayAvatar(profile) {
   return profile?.avatar_url?.trim() || "";
 }
 
+export function friendRequestPlan(existing, userId, targetId) {
+  if (!userId || !targetId || userId === targetId) {
+    return "ignore";
+  }
+
+  if (!existing) {
+    return "insert";
+  }
+
+  if (existing.status === "accepted" || existing.status === "pending") {
+    return "ignore";
+  }
+
+  if (existing.requester_id === userId && existing.addressee_id === targetId) {
+    return "reopen";
+  }
+
+  return "replace";
+}
+
+export function acceptedWithFilter(userId, otherId) {
+  if (!isProfileId(userId) || !isProfileId(otherId) || userId === otherId) {
+    return "";
+  }
+
+  return `and(status.eq.accepted,requester_id.eq.${userId},addressee_id.eq.${otherId}),and(status.eq.accepted,requester_id.eq.${otherId},addressee_id.eq.${userId})`;
+}
+
+export async function sendFriendRequest(supabase, userId, targetId, existing) {
+  const plan = friendRequestPlan(existing, userId, targetId);
+
+  if (plan === "ignore") {
+    return { error: null };
+  }
+
+  if (plan === "replace") {
+    const { error: deleteError } = await supabase.from("friendships").delete().eq("id", existing.id);
+
+    if (deleteError) {
+      return { error: deleteError };
+    }
+  }
+
+  if (plan === "insert" || plan === "replace") {
+    const { error } = await supabase.from("friendships").insert({
+      requester_id: userId,
+      addressee_id: targetId,
+      status: "pending",
+    });
+
+    return { error: error ?? null };
+  }
+
+  const { error } = await supabase
+    .from("friendships")
+    .update({ status: "pending", updated_at: new Date().toISOString() })
+    .eq("id", existing.id)
+    .eq("requester_id", userId)
+    .eq("addressee_id", targetId);
+
+  return { error: error ?? null };
+}
+
 export function sortByName(rows, profilesById, userId) {
   return [...rows].sort((left, right) => {
     const leftName = displayLabel(profilesById.get(otherPartyId(left, userId)));

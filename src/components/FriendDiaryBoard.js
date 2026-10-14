@@ -23,7 +23,7 @@ import {
   subscribeDiaryDay,
   yearMonthOf,
 } from "@/lib/diary";
-import { displayLabel, friendDiaryHref, profileHref } from "@/lib/friends";
+import { acceptedWithFilter, displayLabel, friendDiaryHref, profileHref } from "@/lib/friends";
 import { loginHref } from "@/lib/paths";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -115,20 +115,25 @@ export default function FriendDiaryBoard({ authorId, author }) {
     let cancelled = false;
     const supabase = createClient();
 
-    supabase.rpc("are_friends", { a: user.id, b: authorId }).then(({ data, error: friendError }) => {
-      if (cancelled) {
-        return;
-      }
+    const friendFilter = acceptedWithFilter(user.id, authorId);
+    const lookup = friendFilter
+      ? supabase.from("friendships").select("id").or(friendFilter).limit(1).maybeSingle()
+      : Promise.resolve({ data: null, error: null });
 
-      if (friendError) {
-        setError("친구 자리를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
-        setIsFriend(false);
-        return;
-      }
+    lookup.then(({ data, error: friendError }) => {
+        if (cancelled) {
+          return;
+        }
 
-      setError("");
-      setIsFriend(Boolean(data));
-    });
+        if (friendError) {
+          setError("친구 자리를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+          setIsFriend(false);
+          return;
+        }
+
+        setError("");
+        setIsFriend(Boolean(data));
+      });
 
     return () => {
       cancelled = true;

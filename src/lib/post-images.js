@@ -9,12 +9,67 @@ const POST_IMAGE_EXTENSIONS = {
   "image/gif": "gif",
 };
 
+const POST_IMAGE_PATH =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[A-Za-z0-9._-]+$/i;
+
+export function isProjectPostImageUrl(url) {
+  const value = String(url ?? "").trim();
+
+  if (!value || /[\u0000-\u001F\u007F\\]/.test(value) || value.includes("..")) {
+    return false;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+
+  if (!supabaseUrl) {
+    return false;
+  }
+
+  let base;
+  let parsed;
+
+  try {
+    base = new URL(supabaseUrl);
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+
+  if (parsed.origin !== base.origin || parsed.username || parsed.password) {
+    return false;
+  }
+
+  if (parsed.search || parsed.hash || parsed.protocol !== base.protocol) {
+    return false;
+  }
+
+  const prefix = "/storage/v1/object/public/post-images/";
+
+  if (!parsed.pathname.startsWith(prefix)) {
+    return false;
+  }
+
+  let rest = parsed.pathname.slice(prefix.length);
+
+  try {
+    rest = decodeURIComponent(rest);
+  } catch {
+    return false;
+  }
+
+  if (rest.includes("..") || rest.includes("\\") || rest.includes("//")) {
+    return false;
+  }
+
+  return POST_IMAGE_PATH.test(rest);
+}
+
 export function normalizePostImageUrls(value) {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.map((url) => String(url ?? "").trim()).filter(Boolean);
+  return value.map((url) => String(url ?? "").trim()).filter((url) => isProjectPostImageUrl(url));
 }
 
 export function postImageExtension(file) {
