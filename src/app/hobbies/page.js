@@ -72,7 +72,7 @@ export default async function HobbiesPage({ searchParams }) {
           />
         </div>
 
-        <nav className="mt-4" aria-label="말머리">
+        <nav className="chip-row mt-4" aria-label="말머리">
           <ul className="chip-scroller">
             <li>
               <FilterChip

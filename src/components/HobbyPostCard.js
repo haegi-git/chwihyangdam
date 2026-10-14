@@ -14,24 +14,32 @@ export default function HobbyPostCard({ post, index = 0, layout = "row" }) {
   const category = categoryName(post);
 
   if (layout === "row") {
+    const dateLabel = formatDate(post.created_at);
+
     return (
       <article className="post-row">
         {post.hidden_at ? <HiddenNotice className="mb-2" /> : null}
-        <div className="flex items-baseline justify-between gap-4">
-          <h3 className="min-w-0 text-lg leading-8 text-ink">
+        <div className="md:flex md:items-baseline md:justify-between md:gap-4">
+          <h3 className="text-lg leading-8 text-ink md:min-w-0">
             <Link href={`/hobbies/post/${post.id}`} className="hover:text-sage-deep">
               <HighlighterTag name={hobby} />
               {post.title}
             </Link>
           </h3>
-          <time dateTime={post.created_at} className="shrink-0 text-sm text-ink-soft">
-            {formatDate(post.created_at)}
+          <time
+            dateTime={post.created_at}
+            className="hidden shrink-0 whitespace-nowrap text-sm text-ink-soft md:inline"
+          >
+            {dateLabel}
           </time>
         </div>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-ink-soft">
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft">
           <HobbyAuthorLink author={post.author} authorId={post.author_id} />
-          {category ? <span>{category}</span> : null}
-          <Link href={`/hobbies/post/${post.id}#comments`} className="hover:text-sage-deep">
+          <time dateTime={post.created_at} className="whitespace-nowrap md:hidden">
+            {dateLabel}
+          </time>
+          {category ? <span className="whitespace-nowrap">{category}</span> : null}
+          <Link href={`/hobbies/post/${post.id}#comments`} className="whitespace-nowrap hover:text-sage-deep">
             댓글 {commentCount}
           </Link>
         </p>

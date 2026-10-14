@@ -130,6 +130,7 @@ body::before {
   display: inline-flex;
   height: 1.45rem;
   min-width: 1.6rem;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   border: 1px solid color-mix(in srgb, var(--line) 55%, var(--ink-soft));
@@ -139,6 +140,7 @@ body::before {
   color: var(--ink-soft);
   font-size: 0.75rem;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .paper-sheet.section-tint .count-pill {
@@ -401,15 +403,36 @@ li:last-child > .friend-row {
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.4;
+  white-space: nowrap;
+}
+
+.index-tabs,
+.chip-scroller {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.index-tabs::-webkit-scrollbar,
+.chip-scroller::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.index-tabs > li,
+.chip-scroller > li {
+  flex: 0 0 auto;
 }
 
 .index-tabs {
-  display: flex;
   align-items: flex-end;
   gap: 0.35rem;
-  overflow-x: auto;
   border-bottom: 1px solid var(--line);
-  padding-left: 0.15rem;
+  padding: 0 0.35rem;
 }
 
 .index-tab {
@@ -424,22 +447,37 @@ li:last-child > .friend-row {
   padding: 0.35rem 0.95rem 0.45rem;
   color: var(--ink-soft);
   font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .index-tab[aria-current="page"],
 .index-tab[aria-current="true"] {
   position: relative;
-  top: 1px;
+  z-index: 1;
   background: var(--card);
-  padding-bottom: calc(0.45rem + 1px);
   color: var(--ink);
+  box-shadow: inset 0 -1px 0 var(--card);
+}
+
+.chip-row {
+  position: relative;
+}
+
+.chip-row::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1.75rem;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--paper) 78%);
 }
 
 .chip-scroller {
-  display: flex;
   gap: 0.45rem;
-  overflow-x: auto;
-  padding-bottom: 0.2rem;
+  padding: 0.2rem 1.85rem 0.35rem 0.15rem;
+  scroll-padding-inline: 0.15rem;
 }
 
 .chip {
@@ -453,6 +491,7 @@ li:last-child > .friend-row {
   padding: 0 0.9rem;
   color: var(--ink-soft);
   font-size: 0.88rem;
+  white-space: nowrap;
 }
 
 .chip[aria-current="true"] {
@@ -496,6 +535,11 @@ li:last-child > .friend-row {
   .chip-scroller {
     flex-wrap: wrap;
     overflow: visible;
+    padding-right: 0.15rem;
+  }
+
+  .chip-row::after {
+    content: none;
   }
 }
 
@@ -566,11 +610,13 @@ li:last-child > .friend-row {
 .btn-oauth-kakao {
   display: inline-flex;
   min-height: 2.85rem;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   border-radius: 0.7rem;
   padding: 0 1.2rem;
   font-size: 0.92rem;
+  white-space: nowrap;
   transition:
     transform 160ms ease,
     background-color 160ms ease,

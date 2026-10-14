@@ -319,7 +319,7 @@ export default function ProfilePanel() {
               />
               <label
                 htmlFor="profile-avatar"
-                className={`inline-flex cursor-pointer items-center rounded-full border border-line/90 px-3.5 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-sage-mist/80 hover:text-ink ${
+                className={`inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border border-line/90 px-3.5 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-sage-mist/80 hover:text-ink ${
                   pending || uploading ? "pointer-events-none opacity-60" : ""
                 }`}
               >
@@ -328,7 +328,7 @@ export default function ProfilePanel() {
               {profile?.avatar_url?.trim() ? (
                 <button
                   type="button"
-                  className="rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep/80 hover:text-ink"
+                  className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-paper-deep/80 hover:text-ink"
                   onClick={handleAvatarRemove}
                   disabled={pending || uploading}
                 >
