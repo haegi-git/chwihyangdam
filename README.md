@@ -8,7 +8,7 @@
 - Tailwind CSS
 - Supabase Auth (Google·Kakao OAuth, PKCE)
 
-취미 태그와 글은 Supabase의 `hobby_tags`·`hobby_posts`에서 읽습니다. 작성자 이름은 `profiles`와 이어집니다. 일기는 `diary_entries`에 날짜별로 쌓이며, 본인이 쓰고 고칩니다. `shared_with_friends`를 켠 날만 받아 둔 친구가 읽습니다.
+취미 글은 Supabase의 `hobby_posts`에서 읽습니다. 분류는 `board_categories`, 말머리는 `hobby_tags`입니다. 작성자 이름은 `profiles`와 이어집니다. 일기는 `diary_entries`에 날짜별로 쌓이며, 본인이 쓰고 고칩니다. `shared_with_friends`를 켠 날만 받아 둔 친구가 읽습니다.
 
 ## 시작하기
 
@@ -78,9 +78,10 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | 경로 | 설명 |
 | --- | --- |
 | `/` | 소개 |
-| `/hobbies` | 취미 태그 목록 (`hobby_tags`) |
-| `/hobbies/[slug]` | 태그 소개와 최근 글 |
-| `/hobbies/[slug]/new` | 글 쓰기 (로그인 필요, 손님은 `/login`으로) |
+| `/hobbies` | 취미 게시판. 위에는 분류 탭(전체/자유/정보/질문), 그 아래는 말머리 칩 |
+| `/hobbies/new` | 글 쓰기 (로그인 필요). 분류는 필수, 말머리는 선택 |
+| `/hobbies/[slug]` | 예전 태그 주소. `/hobbies`로 이동 |
+| `/hobbies/[slug]/new` | 예전 글쓰기 주소. `/hobbies/new`로 이동 |
 | `/hobbies/post/[id]` | 글 상세와 댓글. 작성자 이름은 `/profile/[id]`로 이어짐 |
 | `/hobbies/post/[id]/edit` | 본인 글 고치기 |
 | `/diary` | 달력 일기 (`diary_entries`). 로그인 후 날짜를 눌러 읽고 남김. 기본 비공개. **친구에게 공유**를 켠 날만 친구가 읽음 |
@@ -90,6 +91,9 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | `/profile` | 내 프로필 (닉네임·소개·사진 수정, 차단 목록) |
 | `/profile/[id]` | 다른 사람의 닉네임·소개·사진과 남긴 취미 글. 친구 요청·차단·나눈 일기 입구 |
 | `/admin/reports` | 운영함. `profiles.is_admin`인 분만. `/admin/moderation`도 같은 자리 |
+| `/admin/categories` | 분류 추가·이름 변경·켜기/끄기. 서버에서 `profiles.is_admin`을 확인 |
+| `/admin/hobbies` | 취미 말머리 추가·이름 변경·켜기/끄기. 같은 운영 확인 |
+| `/admin/prefixes` | `/admin/categories`로 이동 |
 | `/auth/callback` | OAuth 코드 교환 후 원래 자리로 이동 |
 
 ## 프로필
@@ -100,9 +104,11 @@ Supabase 대시보드 → Authentication → URL Configuration:
 
 ## 취미 글
 
-`hobby_tags`는 누구나 읽을 수 있습니다. `hobby_posts`도 읽기는 열려 있고, 쓰기는 로그인한 본인(`author_id = auth.uid()`)만 가능합니다. 목록에서는 `profiles`의 `display_name`과 `avatar_url`을 붙여 작성자를 보여 줍니다. 손님은 읽고, 글 남기기는 `/login`을 거친 뒤에만 열립니다.
+분류(`board_categories`)는 글마다 하나 필수입니다. 말머리(`hobby_tags`)는 글마다 선택입니다. 활성 행만 손님이 읽고, 추가·수정은 `private.is_admin()`인 운영만 합니다. `hobby_posts` 읽기는 열려 있고, 쓰기는 로그인한 본인(`author_id = auth.uid()`)만 가능합니다. 목록에서는 `profiles`의 `display_name`과 `avatar_url`을 붙여 작성자를 보여 줍니다. 손님은 읽고, 글 남기기는 `/login`을 거친 뒤에만 열립니다.
 
 글 아래 댓글은 `hobby_comments`에 쌓입니다. 맨 위 댓글 아래에만 한 겹의 답글을 달 수 있고, 답글의 답글은 없습니다. 읽기는 열려 있고, 남기거나 고치거나 거두는 일은 로그인한 본인만 할 수 있습니다. 본문은 1–1000자의 평범한 글만 담습니다. 손님은 댓글과 답글을 읽고, 남기기는 `/login`을 거친 뒤에만 열립니다. 글 카드의 댓글 수는 답글을 포함한 전체 행입니다. 부모 댓글을 거두면 아래 답글도 함께 사라집니다. 스키마는 `supabase/migrations/20260914032224_hobby_comments.sql`과 `supabase/migrations/20260914073400_hobby_comment_replies.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 실행하면 됩니다.
+
+스키마 변경 `supabase/migrations/20261014170000_board_categories_hobby_prefixes.sql`은 저장소에만 두었습니다. 연결된 프로젝트에는 적용하지 않았습니다. 적용 전에 글 쓰기와 분류·말머리 화면은 동작하지 않습니다.
 
 글에 붙인 사진은 공개 버킷 `post-images`에 `{user.id}/` 아래로 올린 뒤, 문단과 같은 순서로 `hobby_posts.content`(jsonb)에 담습니다.
 

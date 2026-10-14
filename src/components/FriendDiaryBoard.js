@@ -399,11 +399,11 @@ function Intro({ name, author, action = null }) {
 function ReadDayPanel({ dateKey, entry }) {
   if (!entry) {
     return (
-      <section className="paper-sheet journal-entry rise-in mt-8 rounded-[1.85rem] p-7 md:p-8">
-        <p className="text-sm text-ink-soft">
+      <section className="lined-page mt-8">
+        <h2 className="display text-3xl text-ink">
           <time dateTime={dateKey}>{formatDiaryDate(dateKey)}</time>
-        </p>
-        <h2 className="display mt-4 text-2xl text-ink">나누지 않은 날</h2>
+        </h2>
+        <p className="mt-4 text-lg text-ink">나누지 않은 날</p>
         <p className="mt-3 text-sm leading-7 text-ink-soft">
           이 날은 비어 있거나, 혼자만 보는 글입니다. 친구가 공유를 켠 날만 읽을
           수 있습니다.
@@ -413,19 +413,15 @@ function ReadDayPanel({ dateKey, entry }) {
   }
 
   return (
-    <article className="paper-sheet journal-entry rise-in mt-8 rounded-[1.85rem] p-7 md:p-8">
+    <article className="lined-page mt-8">
       <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-        <time dateTime={dateKey}>{formatDiaryDate(dateKey)}</time>
-        <span aria-hidden="true">·</span>
         <ShareBadge shared />
-        {diaryWasEdited(entry) ? (
-          <>
-            <span aria-hidden="true">·</span>
-            <span>고침</span>
-          </>
-        ) : null}
+        {diaryWasEdited(entry) ? <span>고침</span> : null}
       </div>
-      <h2 className="display mt-5 text-3xl text-ink">{entry.title || "제목 없는 하루"}</h2>
+      <h2 className="display mt-3 text-3xl text-ink">
+        <time dateTime={dateKey}>{formatDiaryDate(dateKey)}</time>
+      </h2>
+      <p className="mt-4 text-lg text-ink">{entry.title || "제목 없는 하루"}</p>
       {entry.body ? (
         <p className="mt-4 whitespace-pre-wrap leading-8 text-ink-soft">{entry.body}</p>
       ) : (

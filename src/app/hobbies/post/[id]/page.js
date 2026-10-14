@@ -6,7 +6,8 @@ import HobbyComments from "@/components/HobbyComments";
 import HobbyPostActions from "@/components/HobbyPostActions";
 import HobbyPostBody from "@/components/HobbyPostBody";
 import PageFrame from "@/components/PageFrame";
-import PrefixMark from "@/components/PrefixMark";
+import HobbyMark from "@/components/HobbyMark";
+import WashiTape from "@/components/notebook/WashiTape";
 import ReportControl from "@/components/ReportControl";
 import { formatDate } from "@/lib/dates";
 import {
@@ -16,7 +17,8 @@ import {
   isPostId,
 } from "@/lib/hobbies";
 import { imageUrlsFromBlocks, blocksFromPost, uniquePostImageUrls } from "@/lib/post-content";
-import { prefixName } from "@/lib/prefixes";
+import { categoryName } from "@/lib/categories";
+import { hobbyName } from "@/lib/hobby-tags";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -75,7 +77,8 @@ export default async function HobbyPostPage({ params }) {
   const user = authData.user;
   const isOwner = user?.id === post.author_id;
   const commentCount = comments.length || commentCountOf(post);
-  const prefix = prefixName(post);
+  const hobby = hobbyName(post);
+  const category = categoryName(post);
 
   return (
     <PageFrame narrow>
@@ -86,16 +89,23 @@ export default async function HobbyPostPage({ params }) {
         취미
       </Link>
 
-      <article className="paper-sheet rise-in rise-in-2 mt-8 rounded-[1.85rem] p-7 md:p-10">
+      <article className="paper-sheet relative mt-8 p-7 md:p-10">
+        <WashiTape tone="pink" />
         {post.hidden_at ? <HiddenNotice className="mb-6" /> : null}
         <h1 className="display text-4xl text-ink md:text-5xl">
-          <PrefixMark name={prefix} />
+          <HobbyMark name={hobby} />
           {post.title}
         </h1>
         <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-soft">
           <HobbyAuthorLink author={post.author} authorId={post.author_id} />
           <span aria-hidden="true">·</span>
           <time dateTime={post.created_at}>{formatDate(post.created_at)}</time>
+          {category ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{category}</span>
+            </>
+          ) : null}
           {commentCount > 0 ? (
             <>
               <span aria-hidden="true">·</span>

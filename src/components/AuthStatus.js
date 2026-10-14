@@ -118,68 +118,75 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
   const initial = name.slice(0, 1);
   const admin = isAdminUser(profile);
 
+  function face(className = "auth-avatar") {
+    if (photo) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element -- 소셜·스토리지 아바타는 호스트가 다양해 img로 둡니다.
+        <img src={photo} alt="" className={className} referrerPolicy="no-referrer" />
+      );
+    }
+
+    return (
+      <span className={className} aria-hidden="true">
+        {initial}
+      </span>
+    );
+  }
+
+  function links(showName) {
+    return (
+      <>
+        <Link
+          href="/profile"
+          className="flex min-w-0 items-center gap-2.5 rounded-full px-1 py-1 text-ink hover:text-sage-deep"
+          onClick={onNavigate}
+        >
+          {face()}
+          {showName ? (
+            <span className={`min-w-0 truncate text-sm text-ink ${showName === "wide" ? "hidden max-w-[9.5rem] lg:inline" : ""}`}>
+              {name}
+            </span>
+          ) : null}
+        </Link>
+        {admin ? (
+          <>
+            <Link href="/admin/reports" className="rounded-full px-2.5 py-1.5 text-sm text-sage-deep hover:bg-paper-deep" onClick={onNavigate}>
+              살펴보기
+            </Link>
+            <Link href="/admin/categories" className="rounded-full px-2.5 py-1.5 text-sm text-sage-deep hover:bg-paper-deep" onClick={onNavigate}>
+              분류
+            </Link>
+            <Link href="/admin/hobbies" className="rounded-full px-2.5 py-1.5 text-sm text-sage-deep hover:bg-paper-deep" onClick={onNavigate}>
+              말머리
+            </Link>
+          </>
+        ) : null}
+        <button
+          type="button"
+          className="rounded-full px-2.5 py-1.5 text-left text-sm text-ink-soft hover:bg-paper-deep hover:text-ink"
+          onClick={handleSignOut}
+        >
+          로그아웃
+        </button>
+      </>
+    );
+  }
+
+  if (isMenu) {
+    return <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-paper-deep/50 px-3 py-3">{links(true)}</div>;
+  }
+
   return (
-    <div
-      className={
-        isMenu
-          ? "flex items-center justify-between gap-3 rounded-2xl bg-paper-deep/50 px-4 py-3"
-          : "auth-chip"
-      }
-    >
-      <Link
-        href="/profile"
-        className="flex min-w-0 items-center gap-2.5 rounded-full transition-colors duration-500 hover:text-sage-deep"
-        onClick={onNavigate}
-      >
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- 소셜·스토리지 아바타는 호스트가 다양해 img로 둡니다.
-          <img src={photo} alt="" className="auth-avatar" referrerPolicy="no-referrer" />
-        ) : (
-          <span className="auth-avatar auth-avatar-fallback" aria-hidden="true">
-            {initial}
-          </span>
-        )}
-        <span className={`min-w-0 truncate text-sm text-ink ${isMenu ? "" : "hidden max-w-[9.5rem] lg:inline"}`}>
-          {name}
-        </span>
-      </Link>
-      {admin ? (
-        <>
-          <Link
-            href="/admin/reports"
-            className={
-              isMenu
-                ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
-                : "rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep"
-            }
-            onClick={onNavigate}
-          >
-            살펴보기
-          </Link>
-          <Link
-            href="/admin/prefixes"
-            className={
-              isMenu
-                ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
-                : "hidden rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep sm:inline"
-            }
-            onClick={onNavigate}
-          >
-            말머리
-          </Link>
-        </>
-      ) : null}
-      <button
-        type="button"
-        className={
-          isMenu
-            ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-ink-soft transition-colors duration-500 hover:bg-card hover:text-ink"
-            : "rounded-full px-2.5 py-1 text-xs tracking-wide text-ink-soft transition-colors duration-500 hover:bg-paper-deep hover:text-ink"
-        }
-        onClick={handleSignOut}
-      >
-        로그아웃
-      </button>
-    </div>
+    <>
+      <div className="auth-chip hidden items-center md:flex">
+        {links("wide")}
+      </div>
+      <details className="account-menu md:hidden">
+        <summary className="list-none" aria-label={`${name} 계정`}>
+          {face()}
+        </summary>
+        <div className="account-menu-panel">{links(true)}</div>
+      </details>
+    </>
   );
 }
