@@ -99,10 +99,18 @@ function BlockButton({
   const className =
     appearance === "button"
       ? "btn-ghost !min-h-9 !px-4 text-sm disabled:opacity-60"
-      : "text-sm text-ink-soft underline-offset-8 transition-colors duration-500 hover:text-sage-deep hover:underline disabled:opacity-50";
+      : appearance === "item"
+        ? "account-menu-item disabled:opacity-60"
+        : "text-sm text-ink-soft underline-offset-8 transition-colors duration-500 hover:text-sage-deep hover:underline disabled:opacity-50";
+  const wrapClass =
+    appearance === "button"
+      ? "inline-flex flex-col items-start"
+      : appearance === "item"
+        ? "block"
+        : "inline-flex flex-col";
 
   return (
-    <span className={appearance === "button" ? "inline-flex flex-col items-start" : "inline-flex flex-col"}>
+    <span className={wrapClass}>
       <button
         type="button"
         className={className}

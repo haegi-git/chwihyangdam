@@ -119,6 +119,137 @@ body::before {
   transform: rotate(-1.1deg);
 }
 
+.paper-sheet.section-tint {
+  border-color: color-mix(in srgb, var(--mustard) 48%, var(--line));
+  background: var(--sticky);
+  box-shadow: 0 18px 32px -22px rgba(90, 72, 28, 0.42);
+  transform: none;
+}
+
+.count-pill {
+  display: inline-flex;
+  height: 1.45rem;
+  min-width: 1.6rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--line) 55%, var(--ink-soft));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 78%, var(--paper-deep));
+  padding: 0 0.48rem;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.paper-sheet.section-tint .count-pill {
+  border-color: color-mix(in srgb, var(--mustard) 50%, var(--ink-soft));
+  background: color-mix(in srgb, white 64%, var(--sticky));
+  color: var(--ink);
+}
+
+.section-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.35rem;
+  padding: 1.15rem 0.75rem 0.4rem;
+  text-align: center;
+}
+
+.section-empty p {
+  max-width: 20rem;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.section-empty-icon {
+  width: 2.15rem;
+  height: 2.15rem;
+  color: color-mix(in srgb, var(--sage) 48%, var(--ink-soft));
+}
+
+.request-slip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, white);
+  border-radius: 0.85rem;
+  background: var(--card);
+  padding: 1rem 1.05rem;
+  box-shadow: 0 10px 20px -18px rgba(58, 53, 47, 0.45);
+}
+
+.friend-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--ink-soft) 32%, var(--line));
+  padding: 0.85rem 0.1rem 1rem;
+}
+
+li:last-child > .friend-row {
+  border-bottom: none;
+  padding-bottom: 0.15rem;
+}
+
+.friend-polaroid-actions {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  margin-top: 0.15rem;
+}
+
+.friend-primary-link {
+  color: var(--sage-deep);
+  font-size: 0.92rem;
+  text-underline-offset: 0.22rem;
+}
+
+.friend-primary-link:hover {
+  text-decoration: underline;
+}
+
+.friend-more {
+  position: relative;
+}
+
+.friend-more-trigger {
+  display: inline-flex;
+  height: 1.75rem;
+  min-width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 0.4rem;
+  color: var(--ink-soft);
+}
+
+.friend-more-trigger:hover,
+.friend-more-trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--paper-deep) 78%, transparent);
+  color: var(--ink);
+}
+
+.friend-more-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.25rem);
+  left: 50%;
+  display: grid;
+  min-width: 8.75rem;
+  transform: translateX(-50%);
+  gap: 0.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  background: var(--card);
+  padding: 0.3rem;
+  box-shadow: 0 16px 28px -20px rgba(58, 53, 47, 0.55);
+}
+
 .polaroid {
   position: relative;
   display: flex;
@@ -826,6 +957,14 @@ button.account-menu-item {
   color: var(--sage-deep);
   font-family: var(--font-hand), "Gaegu", cursive;
   font-size: 2.4rem;
+}
+
+@media (min-width: 640px) {
+  .friend-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
 @media (min-width: 768px) {
