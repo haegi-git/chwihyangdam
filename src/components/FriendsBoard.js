@@ -454,7 +454,7 @@ export default function FriendsBoard() {
             id="friend-search"
             value={query}
             onChange={(event) => setQuery(event.target.value.slice(0, 80))}
-            className="lined-strip mt-3 px-1 py-2"
+            className="lined-strip mt-3"
             placeholder="천천히 부를 이름"
             autoComplete="off"
           />

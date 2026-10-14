@@ -206,46 +206,58 @@ body::before {
 }
 
 .ruled-sheet {
-  padding: 0.35rem 0.9rem 0.5rem;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 4.35rem,
-    color-mix(in srgb, var(--sage) 30%, var(--line)) 4.35rem,
-    color-mix(in srgb, var(--sage) 30%, var(--line)) calc(4.35rem + 1px)
-  );
+  padding: 0.2rem 1rem;
+  background-image: none;
 }
 
 .post-row {
   display: block;
-  padding: 0.85rem 0.35rem 0.95rem;
+  padding: 0.95rem 0.2rem 0.9rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--ink-soft) 42%, var(--line));
   color: var(--ink);
 }
 
-.post-row + .post-row {
-  border-top: 1px solid color-mix(in srgb, var(--sage) 24%, var(--line));
+.post-row:last-child {
+  border-bottom: none;
 }
 
 .lined-page {
-  padding: 1.7rem 1.4rem 1.6rem 2.6rem;
-  background-image:
-    linear-gradient(
-      90deg,
-      transparent 1.7rem,
-      color-mix(in srgb, var(--stamp) 55%, transparent) 1.7rem,
-      color-mix(in srgb, var(--stamp) 55%, transparent) calc(1.7rem + 1px),
-      transparent calc(1.7rem + 1px)
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 2.05rem,
-      color-mix(in srgb, var(--sage) 36%, var(--line)) 2.05rem,
-      color-mix(in srgb, var(--sage) 36%, var(--line)) calc(2.05rem + 1px)
-    );
-  background-position:
-    0 0,
-    0 4.4rem;
+  padding: 1.7rem 1.4rem 1.6rem 1.5rem;
+  border-left: 2px solid color-mix(in srgb, var(--stamp) 55%, transparent);
+  background-image: none;
+}
+
+.lined-field {
+  --rule: 2rem;
+  display: block;
+  width: 100%;
+  min-height: calc(var(--rule) * 7);
+  margin-top: 0.5rem;
+  padding: 0 0.15rem;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(var(--rule) - 1px),
+    color-mix(in srgb, var(--sage-deep) 38%, var(--line)) calc(var(--rule) - 1px)
+  );
+  background-attachment: local;
+  background-origin: content-box;
+  background-size: 100% var(--rule);
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: var(--rule);
+  outline: none;
+  resize: vertical;
+}
+
+.lined-field::placeholder {
+  color: color-mix(in srgb, var(--ink-soft) 72%, transparent);
+}
+
+.lined-field:focus {
+  box-shadow: none;
 }
 
 .highlighter {
@@ -497,10 +509,11 @@ body::before {
 
 .auth-chip {
   display: inline-flex;
-  max-width: 18rem;
+  flex-shrink: 0;
   align-items: center;
   gap: 0.35rem;
   min-height: 2.4rem;
+  white-space: nowrap;
 }
 
 .auth-avatar {
@@ -529,6 +542,12 @@ body::before {
 }
 
 .header-shell {
+  display: flex;
+  flex-wrap: nowrap;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin: 0 auto;
   max-width: 72rem;
 }
@@ -536,12 +555,14 @@ body::before {
 .nav-link {
   position: relative;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   min-height: 2.5rem;
   padding: 0 0.85rem;
   color: var(--ink-soft);
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .nav-link::after {
@@ -592,6 +613,7 @@ body::before {
   gap: 0.15rem;
   color: var(--ink-soft);
   font-size: 0.72rem;
+  white-space: nowrap;
 }
 
 .bottom-link[aria-current="page"] {
@@ -630,18 +652,23 @@ body::before {
 }
 
 .lined-strip {
+  --rule: 2.25rem;
+  height: var(--rule);
   border-right: none;
   border-left: none;
   border-radius: 0;
   border-top: none;
+  padding: 0 0.15rem;
   background-color: transparent;
-  background-image: repeating-linear-gradient(
+  background-image: linear-gradient(
     to bottom,
-    transparent 0,
-    transparent 1.7rem,
-    color-mix(in srgb, var(--sage) 35%, var(--line)) 1.7rem,
-    color-mix(in srgb, var(--sage) 35%, var(--line)) calc(1.7rem + 1px)
+    transparent calc(var(--rule) - 1px),
+    color-mix(in srgb, var(--sage-deep) 38%, var(--line)) calc(var(--rule) - 1px)
   );
+  background-attachment: local;
+  background-origin: content-box;
+  background-size: 100% var(--rule);
+  line-height: var(--rule);
 }
 
 .field-quiet::placeholder,
@@ -692,15 +719,33 @@ body::before {
 
 .account-menu {
   position: relative;
+  flex-shrink: 0;
 }
 
-.account-menu > summary {
-  list-style: none;
-  cursor: pointer;
+.account-trigger {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  border-radius: 999px;
+  padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+  color: var(--ink);
+  white-space: nowrap;
 }
 
-.account-menu > summary::-webkit-details-marker {
+.account-trigger:hover {
+  background: color-mix(in srgb, var(--paper-deep) 70%, transparent);
+}
+
+.account-name {
   display: none;
+  min-width: 3.5rem;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .account-menu-panel {
@@ -709,13 +754,46 @@ body::before {
   top: calc(100% + 0.4rem);
   z-index: 50;
   display: grid;
-  min-width: 11rem;
-  gap: 0.15rem;
+  min-width: 12rem;
+  gap: 0.1rem;
   border: 1px solid var(--line);
   border-radius: 0.9rem;
   background: var(--card);
-  padding: 0.45rem;
+  padding: 0.4rem;
   box-shadow: 0 16px 30px -24px rgba(58, 53, 47, 0.55);
+}
+
+.account-menu-label {
+  padding: 0.45rem 0.7rem 0.15rem;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.account-menu-item {
+  display: block;
+  width: 100%;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.account-menu-item:hover {
+  background: var(--paper-deep);
+}
+
+button.account-menu-item {
+  color: var(--ink-soft);
+}
+
+@media (min-width: 768px) {
+  .account-name {
+    display: inline;
+  }
 }
 
 .notice-badge {

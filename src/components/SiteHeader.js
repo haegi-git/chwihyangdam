@@ -16,13 +16,13 @@ export default function SiteHeader() {
 
   return (
     <header className="site-header">
-      <div className="header-shell flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" className="flex min-w-0 items-center gap-1.5 text-ink">
+      <div className="header-shell px-4 sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-1.5 text-ink">
           <BrandMark />
-          <span className="font-hand truncate text-[1.7rem] leading-none">취향담</span>
+          <span className="font-hand whitespace-nowrap text-[1.7rem] leading-none">취향담</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="주요 메뉴">
+        <nav className="hidden shrink-0 items-center gap-1 md:flex" aria-label="주요 메뉴">
           {desktopNav.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -38,7 +38,7 @@ export default function SiteHeader() {
           })}
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           <NotificationBell />
           <AuthStatus />
         </div>
