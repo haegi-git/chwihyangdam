@@ -477,7 +477,7 @@ function DayPanel({
           value={body}
           onChange={(event) => onBodyChange(event.target.value.slice(0, DIARY_BODY_MAX))}
           rows={7}
-          className="field-quiet mt-2 resize-y rounded-2xl px-4 py-3"
+          className="lined-field"
           placeholder="천천히, 짧게라도 좋아요."
           maxLength={DIARY_BODY_MAX}
           disabled={busy}
