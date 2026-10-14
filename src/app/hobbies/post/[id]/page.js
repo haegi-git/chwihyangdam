@@ -6,6 +6,7 @@ import HobbyComments from "@/components/HobbyComments";
 import HobbyPostActions from "@/components/HobbyPostActions";
 import HobbyPostBody from "@/components/HobbyPostBody";
 import PageFrame from "@/components/PageFrame";
+import PrefixMark from "@/components/PrefixMark";
 import ReportControl from "@/components/ReportControl";
 import { formatDate } from "@/lib/dates";
 import {
@@ -15,6 +16,7 @@ import {
   isPostId,
 } from "@/lib/hobbies";
 import { imageUrlsFromBlocks, blocksFromPost, uniquePostImageUrls } from "@/lib/post-content";
+import { prefixName } from "@/lib/prefixes";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -71,30 +73,25 @@ export default async function HobbyPostPage({ params }) {
     fetchHobbyCommentsForPost(supabase, post.id),
   ]);
   const user = authData.user;
-  const tag = post.hobby_tags;
   const isOwner = user?.id === post.author_id;
   const commentCount = comments.length || commentCountOf(post);
+  const prefix = prefixName(post);
 
   return (
     <PageFrame narrow>
       <Link
-        href={tag?.slug ? `/hobbies/${tag.slug}` : "/hobbies"}
+        href="/hobbies"
         className="text-sm text-sage-deep underline-offset-8 hover:underline"
       >
-        {tag?.name || "취미"}
+        취미
       </Link>
 
       <article className="paper-sheet rise-in rise-in-2 mt-8 rounded-[1.85rem] p-7 md:p-10">
         {post.hidden_at ? <HiddenNotice className="mb-6" /> : null}
-        {tag?.slug ? (
-          <Link
-            href={`/hobbies/${tag.slug}`}
-            className="w-fit rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep"
-          >
-            {tag.name}
-          </Link>
-        ) : null}
-        <h1 className="display mt-6 text-4xl text-ink md:text-5xl">{post.title}</h1>
+        <h1 className="display text-4xl text-ink md:text-5xl">
+          <PrefixMark name={prefix} />
+          {post.title}
+        </h1>
         <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-soft">
           <HobbyAuthorLink author={post.author} authorId={post.author_id} />
           <span aria-hidden="true">·</span>
@@ -112,7 +109,6 @@ export default async function HobbyPostPage({ params }) {
         {isOwner ? (
           <HobbyPostActions
             postId={post.id}
-            tagSlug={tag?.slug || ""}
             imageUrls={uniquePostImageUrls(
               post.image_urls,
               imageUrlsFromBlocks(blocksFromPost(post)),

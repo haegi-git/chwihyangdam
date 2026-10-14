@@ -1,6 +1,9 @@
 import Link from "next/link";
+import HobbyPostCard from "@/components/HobbyPostCard";
 import PageFrame from "@/components/PageFrame";
-import { fetchHobbyTags, postCountOf } from "@/lib/hobbies";
+import { fetchActivePrefixes, fetchHobbyPosts } from "@/lib/hobbies";
+import { loginHref } from "@/lib/paths";
+import { prefixName, selectedPrefixId } from "@/lib/prefixes";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -8,66 +11,109 @@ export const metadata = {
   title: "취미",
 };
 
-export default async function HobbiesPage() {
-  const tags = await loadTags();
+export default async function HobbiesPage({ searchParams }) {
+  const params = await searchParams;
+  const { prefixes, posts, selectedId, user } = await loadBoard(params?.prefix);
+  const selected = prefixes.find((prefix) => prefix.id === selectedId) ?? null;
+  const writeHref = user ? "/hobbies/new" : loginHref("/hobbies/new");
 
   return (
     <PageFrame>
-      <div className="grid gap-8 border-b border-line/80 pb-12 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] md:items-end">
-        <div>
-          <p className="kicker rise-in">마이너 · 마니아</p>
-          <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-7xl">
-            취미
-          </h1>
+      <div className="border-b border-line/80 pb-12">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="kicker rise-in">마이너 · 마니아</p>
+            <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-7xl">취미</h1>
+            <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
+              취향을 칸으로 나누지 않습니다. 최근 글이 먼저 보이고, 말머리는 고르고 싶을 때만
+              붙입니다.
+            </p>
+          </div>
+          <Link href={writeHref} className="btn-quiet rise-in rise-in-3 shrink-0">
+            {user ? "글 남기기" : "들어와 글 남기기"}
+          </Link>
         </div>
-        <p className="rise-in rise-in-2 max-w-xl text-lg leading-9 text-ink-soft">
-          크게 떠들지 않아도 좋은 취향들입니다. 태그를 골라 글을 읽고, 들어와
-          있으면 한 편을 조용히 남길 수 있습니다.
-        </p>
+
+        <nav className="rise-in rise-in-3 mt-8" aria-label="말머리">
+          <ul className="flex flex-wrap gap-2">
+            <li>
+              <FilterChip href="/hobbies" current={!selectedId}>
+                전체
+              </FilterChip>
+            </li>
+            {prefixes.map((prefix) => (
+              <li key={prefix.id}>
+                <FilterChip href={`/hobbies?prefix=${prefix.id}`} current={prefix.id === selectedId}>
+                  {prefix.name}
+                </FilterChip>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
-      {tags.length ? (
-        <ul className="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {tags.map((tag, index) => {
-            const count = postCountOf(tag);
-
-            return (
-              <li key={tag.id}>
-                <Link
-                  href={`/hobbies/${tag.slug}`}
-                  className={`paper-sheet rise-in rise-in-${(index % 6) + 1} flex h-full flex-col rounded-[1.85rem] p-7`}
-                >
-                  <span className="w-fit rounded-full bg-sage-mist px-3 py-1 text-xs tracking-wide text-sage-deep">
-                    {count ? `글 ${count}` : "아직 비어 있음"}
-                  </span>
-                  <h2 className="display mt-8 text-3xl text-ink">{tag.name}</h2>
-                  <p className="mt-4 flex-1 leading-8 text-ink-soft">
-                    {tag.description || "이 취향을 천천히 들여다보는 자리입니다."}
-                  </p>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      {posts.length ? (
+        <ol className="mt-12 space-y-6">
+          {posts.map((post, index) => (
+            <li key={post.id}>
+              <HobbyPostCard post={post} index={index} />
+            </li>
+          ))}
+        </ol>
       ) : (
-        <section className="paper-sheet rise-in rise-in-2 mt-12 rounded-[1.85rem] px-8 py-12 text-center md:px-12">
-          <h2 className="display text-3xl text-ink">취향이 천천히 모이고 있습니다</h2>
+        <section className="paper-sheet rise-in rise-in-3 mt-12 rounded-[1.85rem] px-8 py-12 text-center md:px-12">
+          <h2 className="display text-3xl text-ink">
+            {selected ? "이 말머리에는 아직 글이 없습니다" : "아직 글이 없습니다"}
+          </h2>
           <p className="mx-auto mt-4 max-w-md leading-8 text-ink-soft">
-            {isSupabaseConfigured()
-              ? "아직 열린 태그가 없습니다. 잠시 뒤 다시 와 주세요."
-              : "로컬에서는 .env.local에 Supabase 주소를 적어 주세요."}
+            {selected
+              ? `[${prefixName({ board_prefixes: selected })}]로 짧은 기록을 남겨도 좋습니다.`
+              : isSupabaseConfigured()
+                ? "이 게시판의 첫 기록을 남겨 두어도 좋습니다. 짧게라도 충분합니다."
+                : "로컬에서는 .env.local에 Supabase 주소를 적어 주세요."}
           </p>
+          <Link href={writeHref} className="btn-quiet mt-8">
+            {user ? "글 남기기" : "들어와 글 남기기"}
+          </Link>
         </section>
       )}
     </PageFrame>
   );
 }
 
-async function loadTags() {
+function FilterChip({ href, current, children }) {
+  return (
+    <Link
+      href={href}
+      aria-current={current ? "true" : undefined}
+      className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-500 ${
+        current
+          ? "bg-sage-deep text-[#f7f1e6]"
+          : "border border-line/90 bg-card/80 text-ink-soft hover:bg-sage-mist hover:text-ink"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+async function loadBoard(prefixParam) {
   if (!isSupabaseConfigured()) {
-    return [];
+    return { prefixes: [], posts: [], selectedId: "", user: null };
   }
 
   const supabase = await createClient();
-  return fetchHobbyTags(supabase);
+  const prefixes = await fetchActivePrefixes(supabase);
+  const selectedId = selectedPrefixId(prefixParam, prefixes);
+  const [{ data: authData }, posts] = await Promise.all([
+    supabase.auth.getUser(),
+    fetchHobbyPosts(supabase, selectedId),
+  ]);
+
+  return {
+    prefixes,
+    posts,
+    selectedId,
+    user: authData.user,
+  };
 }

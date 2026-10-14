@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminReportsList from "@/components/AdminReportsList";
+import AdminSectionNav from "@/components/AdminSectionNav";
 import PageFrame from "@/components/PageFrame";
 import { fetchPendingModerationInbox } from "@/lib/moderation";
 import { isAdminUser } from "@/lib/profiles";
@@ -87,6 +88,7 @@ export default async function AdminReportsPage() {
         다섯 명이 살펴 달라고 한 글이 이곳에 모입니다. AI는 초안만 적고, 사람을
         막지는 않습니다.
       </p>
+      <AdminSectionNav current="/admin/reports" />
 
       <div className="mt-12">
         <AdminReportsList items={items} aiConfigured={aiConfigured} />
