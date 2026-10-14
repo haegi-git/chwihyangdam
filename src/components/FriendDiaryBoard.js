@@ -116,19 +116,11 @@ export default function FriendDiaryBoard({ authorId, author }) {
     const supabase = createClient();
 
     const friendFilter = acceptedWithFilter(user.id, authorId);
+    const lookup = friendFilter
+      ? supabase.from("friendships").select("id").or(friendFilter).limit(1).maybeSingle()
+      : Promise.resolve({ data: null, error: null });
 
-    if (!friendFilter) {
-      setIsFriend(false);
-      return undefined;
-    }
-
-    supabase
-      .from("friendships")
-      .select("id")
-      .or(friendFilter)
-      .limit(1)
-      .maybeSingle()
-      .then(({ data, error: friendError }) => {
+    lookup.then(({ data, error: friendError }) => {
         if (cancelled) {
           return;
         }
