@@ -1,6 +1,8 @@
 import Link from "next/link";
 import FriendDiaryBoard from "@/components/FriendDiaryBoard";
 import PageFrame from "@/components/PageFrame";
+import EmptyMark from "@/components/notebook/EmptyMark";
+import PaperCard from "@/components/notebook/PaperCard";
 import { isProfileId } from "@/lib/profiles";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -81,13 +83,14 @@ function EmptyState({ kicker, title, body }) {
     <div>
       <p className="kicker rise-in">{kicker}</p>
       <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">나눈 일기</h1>
-      <section className="paper-sheet rise-in rise-in-2 mt-10 rounded-[1.85rem] px-8 py-12 text-center md:px-12 md:py-16">
-        <h2 className="display text-4xl text-ink md:text-5xl">{title}</h2>
+      <PaperCard as="section" tape className="rise-in rise-in-2 mt-10 px-8 py-12 text-center md:px-12 md:py-16">
+        <EmptyMark />
+        <h2 className="display mt-5 text-4xl text-ink md:text-5xl">{title}</h2>
         <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">{body}</p>
         <Link href="/friends" className="btn-ghost mt-10">
           친구 자리
         </Link>
-      </section>
+      </PaperCard>
     </div>
   );
 }

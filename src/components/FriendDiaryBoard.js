@@ -6,6 +6,8 @@ import BlockControl from "@/components/BlockControl";
 import DiaryCalendar from "@/components/DiaryCalendar";
 import PersonFace from "@/components/PersonFace";
 import ShareBadge from "@/components/ShareBadge";
+import EmptyMark from "@/components/notebook/EmptyMark";
+import PaperCard from "@/components/notebook/PaperCard";
 import {
   DIARY_SELECT,
   clampKeyToMonth,
@@ -239,12 +241,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
     return (
       <div>
         <Intro name={name} author={author} />
-        <section className="paper-sheet rise-in rise-in-3 mt-10 rounded-[1.85rem] px-8 py-12 text-center md:px-12 md:py-16">
-          <p className="kicker justify-center">아직 비어 있습니다</p>
-          <h2 className="display mt-8 text-4xl text-ink md:text-5xl">먼저 들어와 주세요</h2>
-          <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
-            친구가 나눈 날은 들어와 있는 분만 읽을 수 있습니다.
-          </p>
+        <GateCard kicker="아직 비어 있습니다" title="먼저 들어와 주세요" body="친구가 나눈 날은 들어와 있는 분만 읽을 수 있습니다.">
           <Link href={loginHref(nextPath)} className="btn-quiet mt-10">
             로그인
           </Link>
@@ -254,7 +251,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
               Supabase 주소를 적어 주세요.
             </p>
           ) : null}
-        </section>
+        </GateCard>
       </div>
     );
   }
@@ -263,17 +260,15 @@ export default function FriendDiaryBoard({ authorId, author }) {
     return (
       <div>
         <Intro name={name} author={author} />
-        <section className="paper-sheet rise-in rise-in-3 mt-10 rounded-[1.85rem] px-8 py-12 text-center md:px-12 md:py-16">
-          <p className="kicker justify-center">나의 자리</p>
-          <h2 className="display mt-8 text-4xl text-ink md:text-5xl">내 일기입니다</h2>
-          <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
-            남들이 보는 나눈 날이 아니라, 내가 쓰고 고치는 달력은 일기 자리에
-            있습니다.
-          </p>
+        <GateCard
+          kicker="나의 자리"
+          title="내 일기입니다"
+          body="남들이 보는 나눈 날이 아니라, 내가 쓰고 고치는 달력은 일기 자리에 있습니다."
+        >
           <Link href="/diary" className="btn-quiet mt-10">
             내 일기 열기
           </Link>
-        </section>
+        </GateCard>
       </div>
     );
   }
@@ -307,13 +302,11 @@ export default function FriendDiaryBoard({ authorId, author }) {
     return (
       <div>
         <Intro name={name} author={author} action={blockAction} />
-        <section className="paper-sheet rise-in rise-in-3 mt-10 rounded-[1.85rem] px-8 py-12 text-center md:px-12 md:py-16">
-          <p className="kicker justify-center">아직 닫혀 있습니다</p>
-          <h2 className="display mt-8 text-4xl text-ink md:text-5xl">친구가 되면 열립니다</h2>
-          <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
-            요청을 주고받은 뒤에, 이 사람이 체크한 날만 읽을 수 있습니다.
-            혼자 보는 날은 열리지 않습니다.
-          </p>
+        <GateCard
+          kicker="아직 닫혀 있습니다"
+          title="친구가 되면 열립니다"
+          body="요청을 주고받은 뒤에, 이 사람이 체크한 날만 읽을 수 있습니다. 혼자 보는 날은 열리지 않습니다."
+        >
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link href={profileHref(authorId)} className="btn-quiet">
               프로필 보기
@@ -322,7 +315,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
               친구 자리
             </Link>
           </div>
-        </section>
+        </GateCard>
       </div>
     );
   }
@@ -372,6 +365,18 @@ export default function FriendDiaryBoard({ authorId, author }) {
         <ReadDayPanel dateKey={selectedKey} entry={selectedEntry} />
       )}
     </div>
+  );
+}
+
+function GateCard({ kicker, title, body, children }) {
+  return (
+    <PaperCard as="section" tape className="rise-in rise-in-3 mt-10 px-8 py-12 text-center md:px-12 md:py-16">
+      <EmptyMark />
+      <p className="kicker mt-5 justify-center">{kicker}</p>
+      <h2 className="display mt-6 text-4xl text-ink md:text-5xl">{title}</h2>
+      <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">{body}</p>
+      {children}
+    </PaperCard>
   );
 }
 

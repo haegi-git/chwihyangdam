@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BlockControl from "@/components/BlockControl";
 import PersonFace from "@/components/PersonFace";
+import EmptyMark from "@/components/notebook/EmptyMark";
+import PaperCard from "@/components/notebook/PaperCard";
 import StampButton from "@/components/notebook/StampButton";
 import WashiTape from "@/components/notebook/WashiTape";
 import {
@@ -415,9 +417,14 @@ export default function FriendsBoard() {
     return (
       <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
         <Intro />
-        <section className="paper-sheet rise-in rise-in-3 rounded-[2.2rem] px-8 py-12 text-center md:px-12 md:py-16">
-          <p className="kicker justify-center">아직 비어 있습니다</p>
-          <h2 className="display mt-8 text-4xl text-ink md:text-5xl">먼저 들어와 주세요</h2>
+        <PaperCard
+          as="section"
+          tape
+          className="rise-in rise-in-3 px-8 py-12 text-center md:px-12 md:py-16"
+        >
+          <EmptyMark />
+          <p className="kicker mt-5 justify-center">아직 비어 있습니다</p>
+          <h2 className="display mt-6 text-4xl text-ink md:text-5xl">먼저 들어와 주세요</h2>
           <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
             친구 요청과 나눈 일기는 들어와 있는 분만 열고 닫을 수 있습니다.
           </p>
@@ -430,7 +437,7 @@ export default function FriendsBoard() {
               Supabase 주소를 적어 주세요.
             </p>
           ) : null}
-        </section>
+        </PaperCard>
       </div>
     );
   }
@@ -439,8 +446,8 @@ export default function FriendsBoard() {
     <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
       <Intro />
 
-      <div className="rise-in rise-in-3 grid gap-6">
-        <section className="paper-sheet rounded-[2.2rem] px-7 py-8 md:px-10 md:py-10">
+      <div className="rise-in rise-in-3 grid gap-8">
+        <PaperCard as="section" tape tapeTone="sage" className="px-6 py-7 md:px-8 md:py-8">
           <p className="kicker">찾기</p>
           <h2 className="display mt-5 text-3xl text-ink">닉네임으로 초대</h2>
           <p className="mt-3 text-sm leading-7 text-ink-soft">
@@ -496,7 +503,7 @@ export default function FriendsBoard() {
               </p>
             )
           ) : null}
-        </section>
+        </PaperCard>
 
         {error ? (
           <p className="text-sm text-clay" role="alert">
@@ -515,6 +522,7 @@ export default function FriendsBoard() {
           loading={!loaded}
           items={incoming}
           variant="notes"
+          tapeTone="pink"
           renderItem={(friendship) => (
             <FriendRow
               userId={user.id}
@@ -595,18 +603,34 @@ function Intro() {
   );
 }
 
-function FriendSection({ title, empty, loading, items, renderItem, variant = "plain" }) {
+function FriendSection({
+  title,
+  empty,
+  loading,
+  items,
+  renderItem,
+  variant = "plain",
+  tapeTone = "sage",
+}) {
+  const tinted = variant === "notes" && !loading && items.length > 0;
   const listClass =
-    variant === "polaroid" ? "polaroid-grid mt-5 flex flex-wrap gap-6" : "mt-5 grid gap-3";
+    variant === "polaroid" ? "polaroid-grid mt-6 flex flex-wrap gap-6" : "mt-6 grid gap-3";
 
   return (
-    <section>
-      <div className="flex items-baseline justify-between gap-3">
+    <PaperCard
+      as="section"
+      tape
+      tapeTone={tapeTone}
+      className={`section-card px-6 py-7 md:px-8 md:py-8 ${tinted ? "section-tint" : ""}`}
+    >
+      <div className="flex flex-wrap items-center gap-2.5">
         <h2 className="display text-3xl text-ink">{title}</h2>
-        <p className="text-xs tracking-wide text-ink-soft">{loading ? "…" : items.length}</p>
+        <span className="count-pill" aria-label={loading ? "불러오는 중" : `${items.length}건`}>
+          {loading ? "…" : items.length}
+        </span>
       </div>
       {loading ? (
-        <p className="mt-5 text-sm text-ink-soft">자리를 여는 중…</p>
+        <p className="mt-6 text-center text-sm text-ink-soft">자리를 여는 중…</p>
       ) : items.length ? (
         <ul className={listClass}>
           {items.map((item) => (
@@ -616,9 +640,12 @@ function FriendSection({ title, empty, loading, items, renderItem, variant = "pl
           ))}
         </ul>
       ) : (
-        <p className="mt-5 text-sm leading-7 text-ink-soft">{empty}</p>
+        <div className="section-empty">
+          <EmptyMark />
+          <p>{empty}</p>
+        </div>
       )}
-    </section>
+    </PaperCard>
   );
 }
 
@@ -641,11 +668,7 @@ function FriendRow({
   const name = displayLabel(profile);
 
   const shell =
-    relation === "incoming"
-      ? "sticky-note relative flex flex-col gap-4 p-5"
-      : relation === "accepted"
-        ? "polaroid"
-        : "flex flex-col gap-3 border-b border-line/80 py-4 sm:flex-row sm:items-center sm:justify-between";
+    relation === "incoming" ? "request-slip" : relation === "accepted" ? "polaroid" : "friend-row";
 
   return (
     <div className={shell}>
@@ -655,20 +678,25 @@ function FriendRow({
       ) : (
         <PersonFace profile={profile || { id: otherId, display_name: name }} size="sm" />
       )}
-      <div className={`flex flex-wrap gap-2 ${relation === "accepted" ? "mt-3 justify-center" : ""}`}>
-        {!blocked && relation === "accepted" && otherId ? (
+      <div className={relation === "accepted" ? "friend-polaroid-actions" : "flex flex-wrap gap-2"}>
+        {relation === "accepted" ? (
           <>
-            <Link href={friendDiaryHref(otherId)} className="text-sm text-sage-deep underline-offset-4 hover:underline">
-              공유 일기 보기
-            </Link>
-            <button
-              type="button"
-              className="btn-ghost !min-h-9 !px-3 text-sm"
-              onClick={() => onUnfriend(friendship)}
-              disabled={busy}
-            >
-              {pending === `unfriend:${friendship.id}` ? "거두는 중…" : "친구 끊기"}
-            </button>
+            {!blocked && otherId ? (
+              <Link href={friendDiaryHref(otherId)} className="friend-primary-link">
+                공유 일기 보기
+              </Link>
+            ) : null}
+            <FriendMore
+              name={name}
+              busy={busy}
+              pending={pending}
+              friendship={friendship}
+              blocked={blocked}
+              otherId={otherId}
+              userId={userId}
+              onUnfriend={onUnfriend}
+              onBlocked={onBlocked}
+            />
           </>
         ) : null}
         {!blocked && relation === "incoming" ? (
@@ -710,7 +738,7 @@ function FriendRow({
             {pending === `request:${otherId}` ? "보내는 중…" : "친구 요청"}
           </button>
         ) : null}
-        {otherId ? (
+        {relation !== "accepted" && otherId ? (
           <BlockControl
             profileId={otherId}
             currentUserId={userId}
@@ -721,6 +749,97 @@ function FriendRow({
           />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function FriendMore({
+  name,
+  busy,
+  pending,
+  friendship,
+  blocked,
+  otherId,
+  userId,
+  onUnfriend,
+  onBlocked,
+}) {
+  const menuRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const showUnfriend = Boolean(!blocked && friendship && onUnfriend);
+  const showBlock = Boolean(otherId);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    function onPointerDown(event) {
+      if (!menuRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  if (!showUnfriend && !showBlock) {
+    return null;
+  }
+
+  return (
+    <div className="friend-more" ref={menuRef}>
+      <button
+        type="button"
+        className="friend-more-trigger"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={`${name} 더보기`}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
+          <circle cx="5" cy="12" r="1.7" />
+          <circle cx="12" cy="12" r="1.7" />
+          <circle cx="19" cy="12" r="1.7" />
+        </svg>
+      </button>
+      {open ? (
+        <div className="friend-more-panel" role="menu">
+          {showUnfriend ? (
+            <button
+              type="button"
+              className="account-menu-item"
+              role="menuitem"
+              onClick={() => onUnfriend(friendship)}
+              disabled={busy}
+            >
+              {pending === `unfriend:${friendship.id}` ? "거두는 중…" : "친구 끊기"}
+            </button>
+          ) : null}
+          {showBlock ? (
+            <BlockControl
+              profileId={otherId}
+              currentUserId={userId}
+              blocked={blocked}
+              appearance="item"
+              disabled={busy}
+              onChanged={() => onBlocked?.()}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
