@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import AuthStatus from "@/components/AuthStatus";
 import BrandMark from "@/components/BrandMark";
+import NotificationBell from "@/components/NotificationBell";
 import { navItems } from "@/data/nav";
 
 function isActive(pathname, href) {
@@ -66,6 +67,7 @@ export default function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <NotificationBell />
             <AuthStatus />
             <button
               type="button"

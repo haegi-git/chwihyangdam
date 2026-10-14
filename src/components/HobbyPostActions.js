@@ -6,7 +6,7 @@ import { useState } from "react";
 import { removeOwnedPostImages } from "@/lib/post-images";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-export default function HobbyPostActions({ postId, tagSlug, imageUrls = [] }) {
+export default function HobbyPostActions({ postId, imageUrls = [] }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -43,7 +43,7 @@ export default function HobbyPostActions({ postId, tagSlug, imageUrls = [] }) {
     }
 
     setPending(false);
-    router.push(tagSlug ? `/hobbies/${tagSlug}` : "/hobbies");
+    router.push("/hobbies");
     router.refresh();
   }
 

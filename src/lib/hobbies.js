@@ -2,7 +2,7 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const POST_SELECT =
-  "id, title, body, content, image_urls, created_at, updated_at, author_id, hobby_tag_id, hidden_at, hide_reason, hobby_tags ( id, slug, name ), hobby_comments(count)";
+  "id, title, body, content, image_urls, created_at, updated_at, author_id, hobby_tag_id, prefix_id, hidden_at, hide_reason, board_prefixes ( id, name ), hobby_comments(count)";
 
 const COMMENT_SELECT =
   "id, post_id, parent_id, author_id, body, created_at, updated_at, hidden_at, hide_reason";
@@ -15,11 +15,6 @@ export function isPostId(value) {
 
 export function authorLabel(author) {
   return author?.display_name?.trim() || "이름 없는 자리";
-}
-
-export function postCountOf(tag) {
-  const row = Array.isArray(tag?.hobby_posts) ? tag.hobby_posts[0] : null;
-  return Number(row?.count ?? 0);
 }
 
 export function commentCountOf(post) {
@@ -80,41 +75,48 @@ export function groupHobbyCommentThreads(comments) {
   return threads;
 }
 
-export async function fetchHobbyTags(supabase) {
+export async function fetchActivePrefixes(supabase) {
   const { data, error } = await supabase
-    .from("hobby_tags")
-    .select("id, slug, name, description, created_at, hobby_posts(count)")
+    .from("board_prefixes")
+    .select("id, name, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("hobby_tags", error);
+    console.error("board_prefixes", error);
     return [];
   }
 
   return data ?? [];
 }
 
-export async function fetchHobbyTagBySlug(supabase, slug) {
+export async function fetchBoardPrefixes(supabase) {
   const { data, error } = await supabase
-    .from("hobby_tags")
-    .select("id, slug, name, description, created_at")
-    .eq("slug", slug)
-    .maybeSingle();
+    .from("board_prefixes")
+    .select("id, name, sort_order, is_active")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
 
   if (error) {
-    console.error("hobby_tag", error);
-    return null;
+    console.error("board_prefixes", error);
+    return [];
   }
 
-  return data;
+  return data ?? [];
 }
 
-export async function fetchHobbyPostsForTag(supabase, tagId) {
-  const { data, error } = await supabase
+export async function fetchHobbyPosts(supabase, prefixId = "") {
+  let query = supabase
     .from("hobby_posts")
     .select(POST_SELECT)
-    .eq("hobby_tag_id", tagId)
     .order("created_at", { ascending: false });
+
+  if (prefixId) {
+    query = query.eq("prefix_id", prefixId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("hobby_posts", error);

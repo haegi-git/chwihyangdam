@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import HobbyPostForm from "@/components/HobbyPostForm";
 import PageFrame from "@/components/PageFrame";
-import { fetchHobbyPostById, isPostId } from "@/lib/hobbies";
+import { fetchActivePrefixes, fetchHobbyPostById, isPostId } from "@/lib/hobbies";
 import { loginHref } from "@/lib/paths";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -62,7 +62,7 @@ export default async function EditHobbyPostPage({ params }) {
     redirect(`/hobbies/post/${post.id}`);
   }
 
-  const tag = post.hobby_tags || { id: post.hobby_tag_id, slug: "", name: "취미" };
+  const prefixes = await fetchActivePrefixes(supabase);
 
   return (
     <PageFrame narrow>
@@ -84,8 +84,8 @@ export default async function EditHobbyPostPage({ params }) {
       <div className="mt-10">
         <HobbyPostForm
           mode="edit"
-          tag={tag}
           post={post}
+          prefixes={prefixes}
           cancelHref={`/hobbies/post/${post.id}`}
         />
       </div>

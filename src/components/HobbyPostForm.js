@@ -48,8 +48,8 @@ function localImageBlock(file) {
 
 export default function HobbyPostForm({
   mode = "create",
-  tag,
   post,
+  prefixes = [],
   cancelHref,
 }) {
   const router = useRouter();
@@ -58,7 +58,14 @@ export default function HobbyPostForm({
   const focusRef = useRef({ key: "", cursor: 0 });
   const pendingFocusRef = useRef(null);
   const paragraphNodes = useRef(new Map());
+  const activePrefixIds = new Set(prefixes.map((prefix) => prefix.id));
+  const preservedPrefixId =
+    post?.prefix_id && !activePrefixIds.has(post.prefix_id) ? post.prefix_id : "";
   const [title, setTitle] = useState(post?.title ?? "");
+  const [prefixId, setPrefixId] = useState(() =>
+    activePrefixIds.has(post?.prefix_id) ? post.prefix_id : "",
+  );
+  const [prefixTouched, setPrefixTouched] = useState(false);
   const [blocks, setBlocks] = useState(() => composeBlocksFromPost(post));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -321,9 +328,7 @@ export default function HobbyPostForm({
 
     if (!user) {
       setPending(false);
-      const nextPath = isEdit
-        ? `/hobbies/post/${post.id}/edit`
-        : `/hobbies/${tag.slug}/new`;
+      const nextPath = isEdit ? `/hobbies/post/${post.id}/edit` : "/hobbies/new";
       router.replace(loginHref(nextPath));
       return;
     }
@@ -354,6 +359,8 @@ export default function HobbyPostForm({
     const keptUrls = blocks.filter((block) => block.kind === "kept").map((block) => block.url);
     const droppedUrls = previousUrls.filter((url) => !keptUrls.includes(url));
 
+    const nextPrefixId = prefixId || (!prefixTouched && preservedPrefixId ? preservedPrefixId : null);
+
     if (isEdit) {
       const { error: updateError } = await supabase
         .from("hobby_posts")
@@ -362,6 +369,7 @@ export default function HobbyPostForm({
           body: nextBody,
           content,
           image_urls: imageUrls,
+          prefix_id: nextPrefixId,
           updated_at: new Date().toISOString(),
         })
         .eq("id", post.id)
@@ -384,11 +392,11 @@ export default function HobbyPostForm({
       .from("hobby_posts")
       .insert({
         author_id: user.id,
-        hobby_tag_id: tag.id,
         title: nextTitle,
         body: nextBody,
         content,
         image_urls: imageUrls,
+        prefix_id: nextPrefixId,
       })
       .select("id")
       .maybeSingle();
@@ -409,7 +417,7 @@ export default function HobbyPostForm({
       onSubmit={handleSubmit}
       className="paper-sheet rise-in rise-in-3 rounded-[1.85rem] p-7 md:p-10"
     >
-      <p className="kicker">{tag.name}</p>
+      <p className="kicker">취미</p>
       <h2 className="display mt-5 text-3xl text-ink md:text-4xl">
         {isEdit ? "글 고치기" : "글 남기기"}
       </h2>
@@ -418,6 +426,28 @@ export default function HobbyPostForm({
           ? "글을 쓰다가 사진을 넣으면 그 자리에 남습니다. 천천히 다듬어도 좋습니다."
           : "한 장의 종이에 적듯 쓰다가, 사진을 넣으면 커서 자리에 들어갑니다."}
       </p>
+
+      <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-prefix">
+        말머리
+      </label>
+      <select
+        id="hobby-post-prefix"
+        value={prefixId}
+        onChange={(event) => {
+          setPrefixTouched(true);
+          setPrefixId(event.target.value);
+        }}
+        className="field-quiet mt-2 rounded-2xl px-4 py-3"
+        disabled={pending}
+      >
+        <option value="">선택 안 함</option>
+        {prefixes.map((prefix) => (
+          <option key={prefix.id} value={prefix.id}>
+            {prefix.name}
+          </option>
+        ))}
+      </select>
+      <p className="mt-2 text-xs leading-6 text-ink-soft">없어도 됩니다. 종류는 운영하는 분이 더합니다.</p>
 
       <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-title">
         제목

@@ -144,17 +144,30 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
         </span>
       </Link>
       {admin ? (
-        <Link
-          href="/admin/reports"
-          className={
-            isMenu
-              ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
-              : "rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep"
-          }
-          onClick={onNavigate}
-        >
-          살펴보기
-        </Link>
+        <>
+          <Link
+            href="/admin/reports"
+            className={
+              isMenu
+                ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
+                : "rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep"
+            }
+            onClick={onNavigate}
+          >
+            살펴보기
+          </Link>
+          <Link
+            href="/admin/prefixes"
+            className={
+              isMenu
+                ? "shrink-0 rounded-full px-3 py-1.5 text-sm text-sage-deep transition-colors duration-500 hover:bg-card"
+                : "hidden rounded-full px-2.5 py-1 text-xs tracking-wide text-sage-deep transition-colors duration-500 hover:bg-paper-deep sm:inline"
+            }
+            onClick={onNavigate}
+          >
+            말머리
+          </Link>
+        </>
       ) : null}
       <button
         type="button"

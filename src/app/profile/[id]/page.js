@@ -152,7 +152,7 @@ async function AuthorPosts({ authorId }) {
       <ol className="mt-10 grid gap-6 lg:grid-cols-2">
         {posts.map((post, index) => (
           <li key={post.id}>
-            <HobbyPostCard post={post} index={index} showTag />
+            <HobbyPostCard post={post} index={index} />
           </li>
         ))}
       </ol>
