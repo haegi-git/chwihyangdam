@@ -6,6 +6,7 @@ import {
   FRIENDSHIP_SELECT,
   friendDiaryHref,
   relationOf,
+  sendFriendRequest,
 } from "@/lib/friends";
 import { loginHref } from "@/lib/paths";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -101,31 +102,15 @@ export default function FriendActions({ profileId, returnTo }) {
         return;
       }
 
-      if (existing) {
-        const { error: retryError } = await supabase
-          .from("friendships")
-          .update({
-            requester_id: currentUser.id,
-            addressee_id: profileId,
-            status: "pending",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existing.id);
+      const { error: requestError } = await sendFriendRequest(
+        supabase,
+        currentUser.id,
+        profileId,
+        existing,
+      );
 
-        if (retryError) {
-          setError("다시 요청하지 못했습니다.");
-        }
-        return;
-      }
-
-      const { error: insertError } = await supabase.from("friendships").insert({
-        requester_id: currentUser.id,
-        addressee_id: profileId,
-        status: "pending",
-      });
-
-      if (insertError) {
-        setError("요청을 보내지 못했습니다.");
+      if (requestError) {
+        setError(existing ? "다시 요청하지 못했습니다." : "요청을 보내지 못했습니다.");
       }
     });
 

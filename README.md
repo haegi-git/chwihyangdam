@@ -133,7 +133,7 @@ Supabase 대시보드 → Authentication → URL Configuration:
 
 친구는 먼저 요청하고 받아 둔 뒤에만 성립합니다. `friendships`는 `pending`·`accepted`·`declined`이며, 같은 두 사람 사이 행은 한 줄만 있습니다. 받아 둔 친구는 `/friends` 목록이나 `/profile/[id]`에서 **나눈 일기**로 들어갑니다. 달력에는 작가가 공유를 켠 날만 점이 찍히고, 혼자 보는 날·빈 날을 눌러도 본문은 열리지 않습니다. 친구가 아닌 사람은 RLS 때문에 일기 행을 읽을 수 없습니다.
 
-`public.are_friends(a, b)`는 받아 둔 친구인지 보는 헬퍼입니다. 일기 SELECT 정책이 이 함수를 씁니다. 고치거나 거두는 일은 여전히 본인만 가능합니다.
+`private.are_friends(a, b)`는 받아 둔 친구인지 보는 헬퍼입니다. 일기 SELECT 정책이 이 함수를 쓰고, 인자 중 하나가 로그인한 사용자일 때만 true입니다. `private` 스키마는 Data API에 노출하지 않습니다. 고치거나 거두는 일은 여전히 본인만 가능합니다.
 
 손님은 `/friends`와 `/friends/[id]`에서 로그인 안내만 봅니다. 검색은 `profiles.display_name`과 프로필 주소(`/profile/{uuid}`)를 받습니다. 취미 글의 작성자 이름도 `/profile/[id]`로 이어지므로 그 자리에서 **친구 요청**을 보낼 수 있습니다.
 

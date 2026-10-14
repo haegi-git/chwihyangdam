@@ -1,4 +1,4 @@
-import { normalizePostImageUrls } from "./post-images.js";
+import { isProjectPostImageUrl, normalizePostImageUrls } from "./post-images.js";
 
 export const POST_CONTENT_VERSION = 1;
 
@@ -38,7 +38,7 @@ export function sanitizePostBlocks(blocks) {
       continue;
     }
 
-    if (isPostImageBlock(block)) {
+    if (isPostImageBlock(block) && isProjectPostImageUrl(block.url)) {
       next.push({
         type: "image",
         url: block.url.trim(),
