@@ -108,7 +108,7 @@ export default async function HobbiesPage({ searchParams }) {
         <PaperCard className="mt-4 px-8 py-12 text-center md:px-12">
           <h2 className="display text-3xl text-ink">{empty.title}</h2>
           <p className="mx-auto mt-4 max-w-md leading-8 text-ink-soft">{empty.body}</p>
-          <Link href={writeHref} className="btn-quiet mt-8">
+          <Link href={writeHref} className="btn-quiet mt-8 hidden md:inline-flex">
             {user ? "글 남기기" : "들어와 글 남기기"}
           </Link>
         </PaperCard>
