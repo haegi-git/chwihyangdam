@@ -3,8 +3,57 @@
 -- Existing posts with a null section are set to 자유. category_id is then required.
 -- hobby_tags stays the hobby 말머리 (hobby_posts.hobby_tag_id). Optional on each post.
 -- Notifications, blocks, and moderation tables are not changed.
+--
+-- Drop the PR #21 prefix trigger before renaming prefix_id. PostgreSQL stores
+-- UPDATE OF columns by attribute number, so the rename would retarget the
+-- trigger at category_id while private.hobby_posts_prefix_is_active() still
+-- reads new.prefix_id. The backfill UPDATE then fails with 42703.
 
 create schema if not exists private;
+
+do $$
+declare
+  trg record;
+  fn record;
+begin
+  for trg in
+    select n.nspname, c.relname, t.tgname
+    from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    join pg_proc p on p.oid = t.tgfoid
+    where not t.tgisinternal
+      and (
+        t.tgname = 'hobby_posts_prefix_is_active'
+        or position('prefix_id' in p.prosrc) > 0
+        or position('board_prefixes' in p.prosrc) > 0
+      )
+  loop
+    execute format('drop trigger if exists %I on %I.%I', trg.tgname, trg.nspname, trg.relname);
+  end loop;
+
+  for fn in
+    select n.nspname, p.proname, pg_get_function_identity_arguments(p.oid) as args
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and (
+        p.proname = 'hobby_posts_prefix_is_active'
+        or position('prefix_id' in p.prosrc) > 0
+        or position('board_prefixes' in p.prosrc) > 0
+      )
+  loop
+    execute format(
+      'drop function if exists %I.%I(%s)',
+      fn.nspname,
+      fn.proname,
+      fn.args
+    );
+  end loop;
+end $$;
+
+drop trigger if exists hobby_posts_prefix_is_active on public.hobby_posts;
+drop function if exists private.hobby_posts_prefix_is_active();
 
 do $$
 begin
