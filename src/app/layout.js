@@ -1,5 +1,5 @@
-import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
-import CalmWash from "@/components/CalmWash";
+import { Gaegu, Noto_Sans_KR } from "next/font/google";
+import BottomNav from "@/components/BottomNav";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
@@ -10,10 +10,10 @@ const sans = Noto_Sans_KR({
   weight: ["400", "500", "700"],
 });
 
-const serif = Noto_Serif_KR({
+const hand = Gaegu({
   subsets: ["latin"],
-  variable: "--font-serif-kr",
-  weight: ["400", "600", "700"],
+  variable: "--font-hand",
+  weight: ["400", "700"],
 });
 
 export const metadata = {
@@ -27,13 +27,13 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ko" className={`${sans.variable} ${serif.variable} h-full`}>
+    <html lang="ko" className={`${sans.variable} ${hand.variable} h-full`}>
       <body className="relative flex min-h-full flex-col bg-paper font-sans text-ink antialiased">
-        <CalmWash />
         <div className="relative z-10 flex min-h-full flex-1 flex-col">
           <SiteHeader />
           <main className="relative flex-1">{children}</main>
           <SiteFooter />
+          <BottomNav />
         </div>
       </body>
     </html>

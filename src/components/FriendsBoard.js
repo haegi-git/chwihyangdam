@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import BlockControl from "@/components/BlockControl";
 import PersonFace from "@/components/PersonFace";
+import StampButton from "@/components/notebook/StampButton";
+import WashiTape from "@/components/notebook/WashiTape";
 import {
   FRIENDSHIP_SELECT,
   PROFILE_FACE_SELECT,
   SEARCH_LIMIT,
   classifyFriendships,
+  displayAvatar,
   displayLabel,
   friendDiaryHref,
   friendshipWith,
@@ -451,7 +454,7 @@ export default function FriendsBoard() {
             id="friend-search"
             value={query}
             onChange={(event) => setQuery(event.target.value.slice(0, 80))}
-            className="field-quiet mt-2 rounded-2xl px-4 py-3"
+            className="lined-strip mt-3 px-1 py-2"
             placeholder="천천히 부를 이름"
             autoComplete="off"
           />
@@ -511,6 +514,7 @@ export default function FriendsBoard() {
           empty="지금은 받은 요청이 없습니다."
           loading={!loaded}
           items={incoming}
+          variant="notes"
           renderItem={(friendship) => (
             <FriendRow
               userId={user.id}
@@ -556,6 +560,7 @@ export default function FriendsBoard() {
           empty="아직 받아 둔 친구가 없습니다. 프로필에서 요청을 보내 보세요."
           loading={!loaded}
           items={accepted}
+          variant="polaroid"
           renderItem={(friendship) => (
             <FriendRow
               userId={user.id}
@@ -590,19 +595,24 @@ function Intro() {
   );
 }
 
-function FriendSection({ title, empty, loading, items, renderItem }) {
+function FriendSection({ title, empty, loading, items, renderItem, variant = "plain" }) {
+  const listClass =
+    variant === "polaroid" ? "polaroid-grid mt-5 flex flex-wrap gap-6" : "mt-5 grid gap-3";
+
   return (
-    <section className="rounded-[2rem] border border-line/80 bg-card/70 px-6 py-7 md:px-8">
+    <section>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="display text-2xl text-ink">{title}</h2>
+        <h2 className="display text-3xl text-ink">{title}</h2>
         <p className="text-xs tracking-wide text-ink-soft">{loading ? "…" : items.length}</p>
       </div>
       {loading ? (
         <p className="mt-5 text-sm text-ink-soft">자리를 여는 중…</p>
       ) : items.length ? (
-        <ul className="mt-5 grid gap-3">
+        <ul className={listClass}>
           {items.map((item) => (
-            <li key={item.id}>{renderItem(item)}</li>
+            <li key={item.id} className={variant === "polaroid" ? "w-full max-w-64" : ""}>
+              {renderItem(item)}
+            </li>
           ))}
         </ul>
       ) : (
@@ -630,18 +640,30 @@ function FriendRow({
   const otherId = profile?.id || otherPartyId(friendship, userId);
   const name = displayLabel(profile);
 
+  const shell =
+    relation === "incoming"
+      ? "sticky-note relative flex flex-col gap-4 p-5"
+      : relation === "accepted"
+        ? "polaroid"
+        : "flex flex-col gap-3 border-b border-line/80 py-4 sm:flex-row sm:items-center sm:justify-between";
+
   return (
-    <div className="flex flex-col gap-3 rounded-[1.4rem] border border-line/70 bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <PersonFace profile={profile || { id: otherId, display_name: name }} size="sm" />
-      <div className="flex flex-wrap gap-2">
+    <div className={shell}>
+      {relation === "accepted" ? <WashiTape className="washi-center" /> : null}
+      {relation === "accepted" ? (
+        <PolaroidFace profile={profile || { id: otherId, display_name: name }} />
+      ) : (
+        <PersonFace profile={profile || { id: otherId, display_name: name }} size="sm" />
+      )}
+      <div className={`flex flex-wrap gap-2 ${relation === "accepted" ? "mt-3 justify-center" : ""}`}>
         {!blocked && relation === "accepted" && otherId ? (
           <>
-            <Link href={friendDiaryHref(otherId)} className="btn-quiet !min-h-9 !px-4 text-sm">
-              나눈 일기
+            <Link href={friendDiaryHref(otherId)} className="text-sm text-sage-deep underline-offset-4 hover:underline">
+              공유 일기 보기
             </Link>
             <button
               type="button"
-              className="btn-ghost !min-h-9 !px-4 text-sm"
+              className="btn-ghost !min-h-9 !px-3 text-sm"
               onClick={() => onUnfriend(friendship)}
               disabled={busy}
             >
@@ -651,22 +673,20 @@ function FriendRow({
         ) : null}
         {!blocked && relation === "incoming" ? (
           <>
-            <button
-              type="button"
-              className="btn-quiet !min-h-9 !px-4 text-sm"
+            <StampButton
               onClick={() => onAccept(friendship)}
               disabled={busy}
+              className="!min-h-9 !px-3 !text-base"
             >
               {pending === `accept:${friendship.id}` ? "담는 중…" : "수락"}
-            </button>
-            <button
-              type="button"
-              className="btn-ghost !min-h-9 !px-4 text-sm"
+            </StampButton>
+            <StampButton
               onClick={() => onDecline(friendship)}
               disabled={busy}
+              className="!min-h-9 !px-3 !text-base"
             >
               {pending === `decline:${friendship.id}` ? "거두는 중…" : "거절"}
-            </button>
+            </StampButton>
           </>
         ) : null}
         {!blocked && relation === "outgoing" ? (
@@ -701,6 +721,25 @@ function FriendRow({
           />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function PolaroidFace({ profile }) {
+  const name = displayLabel(profile);
+  const photo = displayAvatar(profile);
+
+  return (
+    <div className="flex w-full flex-col items-center">
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element -- 소셜·스토리지 아바타는 호스트가 다양해 img로 둡니다.
+        <img src={photo} alt="" className="polaroid-photo" referrerPolicy="no-referrer" />
+      ) : (
+        <span className="polaroid-photo" aria-hidden="true">
+          {name.slice(0, 1)}
+        </span>
+      )}
+      <p className="mt-3 text-center text-sm text-ink">{name}</p>
     </div>
   );
 }

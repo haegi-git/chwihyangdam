@@ -1,5 +1,9 @@
 import Link from "next/link";
 import HobbyPostCard from "@/components/HobbyPostCard";
+import IndexTabs from "@/components/notebook/IndexTabs";
+import PaperCard from "@/components/notebook/PaperCard";
+import WashiTape from "@/components/notebook/WashiTape";
+import WritePen from "@/components/notebook/WritePen";
 import PageFrame from "@/components/PageFrame";
 import {
   boardFilterHref,
@@ -34,45 +38,42 @@ export default async function HobbiesPage({ searchParams }) {
 
   return (
     <PageFrame>
-      <div className="border-b border-line/80 pb-12">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <div className="relative pb-8">
+        <WashiTape tone="pink" />
+        <div className="flex flex-col gap-6 pt-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="kicker rise-in">마이너 · 마니아</p>
-            <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-7xl">취미</h1>
-            <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
+            <p className="kicker">마이너 · 마니아</p>
+            <h1 className="display mt-4 text-5xl text-ink md:text-6xl">취미 게시판</h1>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft">
               자유, 정보, 질문으로 나누어 읽고, 말머리는 취미를 고르고 싶을 때 붙입니다.
             </p>
           </div>
-          <Link href={writeHref} className="btn-quiet rise-in rise-in-3 shrink-0">
+          <Link href={writeHref} className="btn-quiet hidden shrink-0 md:inline-flex">
             {user ? "글 남기기" : "들어와 글 남기기"}
           </Link>
         </div>
 
-        <nav className="rise-in rise-in-3 mt-8" aria-label="분류">
-          <ul className="flex flex-wrap gap-x-1 gap-y-1 border-b border-line/80">
-            <li>
-              <CategoryTab
-                href={boardFilterHref({ hobbyId: selectedHobbyId })}
-                current={!selectedCategoryId}
-              >
-                전체
-              </CategoryTab>
-            </li>
-            {categories.map((category) => (
-              <li key={category.id}>
-                <CategoryTab
-                  href={boardFilterHref({ categoryId: category.id, hobbyId: selectedHobbyId })}
-                  current={category.id === selectedCategoryId}
-                >
-                  {category.name}
-                </CategoryTab>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="mt-8">
+          <IndexTabs
+            label="분류"
+            items={[
+              {
+                href: boardFilterHref({ hobbyId: selectedHobbyId }),
+                current: !selectedCategoryId,
+                label: "전체",
+              },
+              ...categories.map((category) => ({
+                key: category.id,
+                href: boardFilterHref({ categoryId: category.id, hobbyId: selectedHobbyId }),
+                current: category.id === selectedCategoryId,
+                label: category.name,
+              })),
+            ]}
+          />
+        </div>
 
         <nav className="mt-4" aria-label="말머리">
-          <ul className="flex flex-wrap gap-2">
+          <ul className="chip-scroller">
             <li>
               <FilterChip
                 href={boardFilterHref({ categoryId: selectedCategoryId })}
@@ -96,39 +97,24 @@ export default async function HobbiesPage({ searchParams }) {
       </div>
 
       {posts.length ? (
-        <ol className="mt-12 space-y-6">
-          {posts.map((post, index) => (
+        <ol className="ruled-sheet">
+          {posts.map((post) => (
             <li key={post.id}>
-              <HobbyPostCard post={post} index={index} />
+              <HobbyPostCard post={post} />
             </li>
           ))}
         </ol>
       ) : (
-        <section className="paper-sheet rise-in rise-in-3 mt-12 rounded-[1.85rem] px-8 py-12 text-center md:px-12">
+        <PaperCard className="mt-4 px-8 py-12 text-center md:px-12">
           <h2 className="display text-3xl text-ink">{empty.title}</h2>
           <p className="mx-auto mt-4 max-w-md leading-8 text-ink-soft">{empty.body}</p>
           <Link href={writeHref} className="btn-quiet mt-8">
             {user ? "글 남기기" : "들어와 글 남기기"}
           </Link>
-        </section>
+        </PaperCard>
       )}
+      <WritePen href={writeHref} label={user ? "글 남기기" : "들어와 글 남기기"} />
     </PageFrame>
-  );
-}
-
-function CategoryTab({ href, current, children }) {
-  return (
-    <Link
-      href={href}
-      aria-current={current ? "true" : undefined}
-      className={`-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm transition-colors duration-500 ${
-        current
-          ? "border-sage-deep text-ink"
-          : "border-transparent text-ink-soft hover:text-ink"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }
 
@@ -137,11 +123,7 @@ function FilterChip({ href, current, children }) {
     <Link
       href={href}
       aria-current={current ? "true" : undefined}
-      className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm transition-colors duration-500 ${
-        current
-          ? "bg-sage-deep text-[#f7f1e6]"
-          : "border border-line/90 bg-card/80 text-ink-soft hover:bg-sage-mist hover:text-ink"
-      }`}
+      className="chip"
     >
       {children}
     </Link>

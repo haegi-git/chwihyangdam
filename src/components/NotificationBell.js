@@ -90,7 +90,7 @@ export default function NotificationBell() {
     >
       <BellIcon />
       {count > 0 ? (
-        <span className="absolute right-1 top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-sage-deep px-1 text-[0.65rem] leading-4 text-[#f7f1e6]">
+        <span className="notice-badge">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}

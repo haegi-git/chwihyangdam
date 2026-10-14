@@ -7,6 +7,7 @@ import HobbyPostActions from "@/components/HobbyPostActions";
 import HobbyPostBody from "@/components/HobbyPostBody";
 import PageFrame from "@/components/PageFrame";
 import HobbyMark from "@/components/HobbyMark";
+import WashiTape from "@/components/notebook/WashiTape";
 import ReportControl from "@/components/ReportControl";
 import { formatDate } from "@/lib/dates";
 import {
@@ -88,7 +89,8 @@ export default async function HobbyPostPage({ params }) {
         취미
       </Link>
 
-      <article className="paper-sheet rise-in rise-in-2 mt-8 rounded-[1.85rem] p-7 md:p-10">
+      <article className="paper-sheet relative mt-8 p-7 md:p-10">
+        <WashiTape tone="pink" />
         {post.hidden_at ? <HiddenNotice className="mb-6" /> : null}
         <h1 className="display text-4xl text-ink md:text-5xl">
           <HobbyMark name={hobby} />

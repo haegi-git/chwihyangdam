@@ -405,7 +405,7 @@ function Intro() {
       <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">나의 일기</h1>
       <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
         날짜를 눌러 그날을 읽고 남길 수 있습니다. 적어 둔 글은 나만 보며,{" "}
-        <strong className="font-medium text-ink">친구에게 공유</strong>를 켠 날만
+        <strong className="font-medium text-ink">친구에게 공개</strong>를 켠 날만
         받아 둔 친구에게 열립니다.
       </p>
     </div>
@@ -437,15 +437,16 @@ function DayPanel({
     return (
       <form
         onSubmit={onSubmit}
-        className="paper-sheet journal-entry rise-in mt-8 rounded-[1.85rem] p-7 md:p-8"
+        className="lined-page journal-entry mt-8"
       >
-        <p className="text-sm text-ink-soft">
+        <p className="text-sm text-ink-soft">이 날의 쪽</p>
+        <h2 className="display mt-2 text-3xl text-ink md:text-4xl">
           <time dateTime={dateKey}>{formatDiaryDate(dateKey)}</time>
-        </p>
-        <h2 className="display mt-4 text-2xl text-ink">
-          {empty ? "아직 비어 있습니다" : "일기 고치기"}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-ink-soft">
+        <p className="mt-3 text-sm leading-6 text-ink-soft">
+          {empty ? "아직 비어 있습니다." : "일기 고치기"}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-ink-soft">
           {empty
             ? "이 날에 짧은 한 줄을 남겨 보세요. 제목만 있어도 됩니다."
             : "고친 뒤에는 이 날의 글만 바뀝니다."}
@@ -494,7 +495,7 @@ function DayPanel({
             disabled={busy}
           />
           <span>
-            <span className="block text-sm text-ink">친구에게 공유</span>
+            <span className="block text-sm text-ink">친구에게 공개</span>
             <span className="mt-1 block text-sm leading-6 text-ink-soft">
               켜 둔 날만 받아 둔 친구가 읽을 수 있습니다. 기본은 나만 봅니다.
             </span>
@@ -518,7 +519,7 @@ function DayPanel({
               취소
             </button>
           )}
-          <button type="submit" className="btn-quiet" disabled={busy}>
+          <button type="submit" className="btn-stamp" disabled={busy}>
             {pending === "save" ? "담는 중…" : empty ? "일기 남기기" : "담기"}
           </button>
         </div>
@@ -527,9 +528,9 @@ function DayPanel({
   }
 
   return (
-    <article className="paper-sheet journal-entry rise-in mt-8 rounded-[1.85rem] p-7 md:p-8">
+    <article className="lined-page journal-entry mt-8">
       <div className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-        <time dateTime={dateKey}>{formatDiaryDate(dateKey)}</time>
+        <span>기록</span>
         <span aria-hidden="true">·</span>
         <ShareBadge shared={Boolean(entry.shared_with_friends)} />
         {diaryWasEdited(entry) ? (
@@ -539,7 +540,10 @@ function DayPanel({
           </>
         ) : null}
       </div>
-      <h2 className="display mt-5 text-3xl text-ink">{entry.title || "제목 없는 하루"}</h2>
+      <h2 className="display mt-3 text-3xl text-ink md:text-4xl">
+        <time dateTime={dateKey}>{formatDiaryDate(dateKey)}</time>
+      </h2>
+      <p className="mt-4 text-lg text-ink">{entry.title || "제목 없는 하루"}</p>
       {entry.body ? (
         <p className="mt-4 whitespace-pre-wrap leading-8 text-ink-soft">{entry.body}</p>
       ) : (

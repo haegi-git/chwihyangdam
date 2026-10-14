@@ -1,7 +1,5 @@
-export default function HobbyMark({ name }) {
-  if (!name) {
-    return null;
-  }
+import HighlighterTag from "@/components/notebook/HighlighterTag";
 
-  return <span className="mr-2 font-sans text-[0.62em] tracking-wide text-sage-deep">[{name}]</span>;
+export default function HobbyMark({ name }) {
+  return <HighlighterTag name={name} />;
 }

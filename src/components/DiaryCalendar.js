@@ -1,3 +1,4 @@
+import WashiTape from "@/components/notebook/WashiTape";
 import {
   DIARY_WEEKDAYS,
   formatDiaryDate,
@@ -22,7 +23,8 @@ export default function DiaryCalendar({
   filledLabel = "일기 있음",
 }) {
   return (
-    <section className="diary-calendar rise-in rise-in-3 mt-10 rounded-[1.85rem] p-5 md:p-7">
+    <section className="diary-calendar mt-10 p-5 md:p-7">
+      <WashiTape />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"

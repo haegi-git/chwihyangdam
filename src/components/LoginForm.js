@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSafeNext } from "@/lib/paths";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import WashiTape from "@/components/notebook/WashiTape";
 
 function callbackUrl(next) {
   const url = new URL("/auth/callback", window.location.origin);
@@ -112,7 +113,8 @@ export default function LoginForm() {
   }
 
   return (
-    <section className="paper-sheet rise-in rise-in-3 rounded-[2.2rem] px-8 py-12 md:px-12 md:py-16">
+    <section className="paper-sheet px-8 py-12 md:px-12 md:py-16">
+      <WashiTape />
       <p className="kicker">소셜 로그인</p>
       <h2 className="display mt-6 text-3xl text-ink md:text-4xl">
         조용히 들어와 주세요
