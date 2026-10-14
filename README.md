@@ -84,11 +84,11 @@ Supabase 대시보드 → Authentication → URL Configuration:
 | `/hobbies/post/[id]` | 글 상세와 댓글. 작성자 이름은 `/profile/[id]`로 이어짐 |
 | `/hobbies/post/[id]/edit` | 본인 글 고치기 |
 | `/diary` | 달력 일기 (`diary_entries`). 로그인 후 날짜를 눌러 읽고 남김. 기본 비공개. **친구에게 공유**를 켠 날만 친구가 읽음 |
-| `/friends` | 친구 요청·수락·거절·끊기. 닉네임 검색 또는 프로필에서 요청 |
-| `/friends/[id]` | 받아 둔 친구가 나눈 날만 읽는 달력 (읽기 전용) |
+| `/friends` | 친구 요청·수락·거절·끊기·차단. 닉네임 검색 또는 프로필에서 요청 |
+| `/friends/[id]` | 받아 둔 친구가 나눈 날만 읽는 달력 (읽기 전용). 여기서도 차단할 수 있음 |
 | `/login` | Google·카카오 로그인 |
-| `/profile` | 내 프로필 (닉네임·소개·사진 수정, `public.profiles`) |
-| `/profile/[id]` | 다른 사람의 닉네임·소개·사진과 남긴 취미 글. 친구 요청·나눈 일기 입구 |
+| `/profile` | 내 프로필 (닉네임·소개·사진 수정, 차단 목록) |
+| `/profile/[id]` | 다른 사람의 닉네임·소개·사진과 남긴 취미 글. 친구 요청·차단·나눈 일기 입구 |
 | `/admin/reports` | 운영함. `profiles.is_admin`인 분만. `/admin/moderation`도 같은 자리 |
 | `/auth/callback` | OAuth 코드 교환 후 원래 자리로 이동 |
 
@@ -137,6 +137,16 @@ Supabase 대시보드 → Authentication → URL Configuration:
 
 손님은 `/friends`와 `/friends/[id]`에서 로그인 안내만 봅니다. 검색은 `profiles.display_name`과 프로필 주소(`/profile/{uuid}`)를 받습니다. 취미 글의 작성자 이름도 `/profile/[id]`로 이어지므로 그 자리에서 **친구 요청**을 보낼 수 있습니다.
 
+## 차단
+
+로그인한 사람은 남의 글·댓글 메뉴, 공개 프로필, 친구 자리에서 **차단하기**를 고를 수 있습니다. 확인을 거친 뒤에만 담기고, 자기 자신은 막을 수 없습니다. `/profile`의 **차단 목록**에서 **차단 해제**를 합니다. 상대에게는 누가 막았는지 보이지 않습니다.
+
+차단하면 그 사람의 취미 글이 목록, 태그, 글 상세에서 빠집니다. 그 사람이 단 댓글과 답글도 빠집니다. 차단한 사람의 맨 위 댓글에 다른 사람의 답글이 달려 있으면, 그 댓글 줄을 통째로 가립니다. 답글만 남기면 부모가 비어 줄이 어긋나고, 운영이 가린 댓글의 답글과 구분하기도 어렵습니다. 차단한 사람이 남의 댓글에 단 답글만 있는 경우에는 그 답글만 빠지고 위 댓글은 그대로 둡니다. 이 가림은 `hobby_posts`·`hobby_comments`의 SELECT 정책이 합니다. 손님의 읽기는 그대로이고, `private.is_admin()`인 운영 계정은 살펴보기 때문에 막은 사람의 글도 계속 봅니다.
+
+같은 순간에 두 사람 사이의 `friendships` 행은 지워집니다. 어느 쪽에서든 새 친구 요청은 들어가지 않습니다. 나눈 일기는 친구 관계가 사라져 더 이상 열리지 않습니다. 차단을 풀어도 친구 관계는 저절로 돌아오지 않습니다.
+
+스키마는 `supabase/migrations/20261014150100_user_blocks.sql`에 맞춰 두었습니다. `private.post_image_url_allowed`의 `search_path`는 `supabase/migrations/20261014150000_post_image_url_allowed_search_path.sql`에서 비웁니다. 본문 조건은 바꾸지 않았습니다. 이 파일들은 저장소에만 두었고, 연결된 프로젝트에는 아직 적용하지 않습니다. 적용할 때는 SQL Editor에서 두 파일을 순서대로 실행하면 됩니다.
+
 ### 두 계정으로 확인하기
 
 1. 계정 A로 로그인하고 `/diary`에서 하루는 **친구에게 공유**를 켜서 남기고, 다른 하루는 끄고 남깁니다.
@@ -153,7 +163,7 @@ Supabase 대시보드 → Authentication → URL Configuration:
 
 다섯 명이 같은 글(또는 댓글)을 살펴 달라고 하면 그 내용은 `hidden_at`으로 잠시 가려지고, `/admin/reports` 운영함에 올라옵니다. 작성자와 운영하는 분만 가려진 글을 보며, 위에 「커뮤니티 안내에 따라 잠시 가려졌어요」가 붙습니다. 다른 사람에게는 RLS로 보이지 않습니다.
 
-운영하는 분은 문제없음(다시 보이기), 가리기 유지, 삭제만 고릅니다. 사람을 하루 정지하거나 막지는 않습니다. AI는 초안 의견만 적습니다.
+운영하는 분은 문제없음(다시 보이기), 가리기 유지, 삭제만 고릅니다. 운영이 사람을 하루 정지하거나 계정을 막지는 않습니다. 이용자가 서로를 가리는 차단은 그와 별개입니다. AI는 초안 의견만 적습니다.
 
 스키마는 `supabase/migrations/20260915040736_moderation_reports_auto_hide.sql`과 `supabase/migrations/20260915043000_moderation_operator_actions.sql`에 맞춰 두었습니다. 연결된 chwihyangdam 프로젝트에는 이미 적용되어 있고, 다른 환경은 SQL Editor에서 같은 파일을 순서대로 실행하면 됩니다.
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BlockControl from "@/components/BlockControl";
 import HiddenNotice from "@/components/HiddenNotice";
 import HobbyAuthorLink from "@/components/HobbyAuthorLink";
 import HobbyComments from "@/components/HobbyComments";
@@ -118,12 +119,17 @@ export default async function HobbyPostPage({ params }) {
             )}
           />
         ) : (
-          <div className="mt-10">
+          <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2">
             <ReportControl
               targetType="post"
               targetId={post.id}
               currentUserId={user?.id ?? null}
               authorId={post.author_id}
+            />
+            <BlockControl
+              profileId={post.author_id}
+              currentUserId={user?.id ?? null}
+              appearance="menu"
             />
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import BlockControl from "@/components/BlockControl";
 import DiaryCalendar from "@/components/DiaryCalendar";
 import PersonFace from "@/components/PersonFace";
 import ShareBadge from "@/components/ShareBadge";
@@ -37,6 +38,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
   const range = today ? diaryRange(fromDateKey(today)) : null;
   const [user, setUser] = useState(() => (configured ? undefined : null));
   const [isFriend, setIsFriend] = useState(null);
+  const [blocked, setBlocked] = useState(false);
   const [view, setView] = useState(null);
   const [entries, setEntries] = useState({});
   const [loadedKey, setLoadedKey] = useState("");
@@ -115,19 +117,28 @@ export default function FriendDiaryBoard({ authorId, author }) {
     let cancelled = false;
     const supabase = createClient();
 
-    supabase.rpc("are_friends", { a: user.id, b: authorId }).then(({ data, error: friendError }) => {
+    Promise.all([
+      supabase.rpc("are_friends", { a: user.id, b: authorId }),
+      supabase
+        .from("user_blocks")
+        .select("blocked_id")
+        .eq("blocker_id", user.id)
+        .eq("blocked_id", authorId)
+        .maybeSingle(),
+    ]).then(([friendResult, blockResult]) => {
       if (cancelled) {
         return;
       }
 
-      if (friendError) {
+      if (friendResult.error) {
         setError("친구 자리를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
         setIsFriend(false);
-        return;
+      } else {
+        setError("");
+        setIsFriend(Boolean(friendResult.data));
       }
 
-      setError("");
-      setIsFriend(Boolean(data));
+      setBlocked(Boolean(blockResult.data));
     });
 
     return () => {
@@ -264,10 +275,26 @@ export default function FriendDiaryBoard({ authorId, author }) {
     );
   }
 
+  const blockAction = (
+    <BlockControl
+      profileId={authorId}
+      currentUserId={user.id}
+      blocked={blocked}
+      appearance="button"
+      onChanged={(nextBlocked) => {
+        setBlocked(nextBlocked);
+        if (nextBlocked) {
+          setIsFriend(false);
+          setEntries({});
+        }
+      }}
+    />
+  );
+
   if (isFriend === null) {
     return (
       <div>
-        <Intro name={name} author={author} />
+        <Intro name={name} author={author} action={blockAction} />
         <div className="diary-calendar mt-10 min-h-[22rem] rounded-[1.85rem]" aria-hidden="true" />
       </div>
     );
@@ -276,7 +303,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
   if (!isFriend) {
     return (
       <div>
-        <Intro name={name} author={author} />
+        <Intro name={name} author={author} action={blockAction} />
         <section className="paper-sheet rise-in rise-in-3 mt-10 rounded-[1.85rem] px-8 py-12 text-center md:px-12 md:py-16">
           <p className="kicker justify-center">아직 닫혀 있습니다</p>
           <h2 className="display mt-8 text-4xl text-ink md:text-5xl">친구가 되면 열립니다</h2>
@@ -300,7 +327,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
   if (!range || !year || !month) {
     return (
       <div>
-        <Intro name={name} author={author} />
+        <Intro name={name} author={author} action={blockAction} />
         <div className="diary-calendar mt-10 min-h-[22rem] rounded-[1.85rem]" aria-hidden="true" />
       </div>
     );
@@ -308,7 +335,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
 
   return (
     <div>
-      <Intro name={name} author={author} />
+      <Intro name={name} author={author} action={blockAction} />
 
       <DiaryCalendar
         monthTitle={monthTitle}
@@ -345,7 +372,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
   );
 }
 
-function Intro({ name, author }) {
+function Intro({ name, author, action = null }) {
   return (
     <div className="border-b border-line/80 pb-10">
       <p className="kicker rise-in">나눈 날만</p>
@@ -356,10 +383,11 @@ function Intro({ name, author }) {
         친구가 체크한 날만 보입니다. 비워 둔 날과 혼자 보는 날은 내용이 열리지
         않습니다.
       </p>
-      <div className="rise-in rise-in-3 mt-8">
+      <div className="rise-in rise-in-3 mt-8 flex flex-wrap items-center gap-4">
         <PersonFace profile={author} size="sm">
           <span className="mt-0.5 block text-xs tracking-wide text-ink-soft">프로필로 돌아가기</span>
         </PersonFace>
+        {action}
       </div>
     </div>
   );

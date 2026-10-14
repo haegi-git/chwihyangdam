@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import BlockControl from "@/components/BlockControl";
 import {
   FRIENDSHIP_SELECT,
   friendDiaryHref,
@@ -14,6 +15,7 @@ export default function FriendActions({ profileId, returnTo }) {
   const configured = isSupabaseConfigured();
   const [user, setUser] = useState(() => (configured ? undefined : null));
   const [friendship, setFriendship] = useState(null);
+  const [blocked, setBlocked] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [pending, setPending] = useState("");
   const [error, setError] = useState("");
@@ -21,12 +23,22 @@ export default function FriendActions({ profileId, returnTo }) {
   const load = useCallback(
     async (userId) => {
       const supabase = createClient();
-      const { data, error: loadError } = await supabase
-        .from("friendships")
-        .select(FRIENDSHIP_SELECT)
-        .or(`requester_id.eq.${profileId},addressee_id.eq.${profileId}`)
-        .limit(1)
-        .maybeSingle();
+      const [{ data, error: loadError }, { data: blockRow }] = await Promise.all([
+        supabase
+          .from("friendships")
+          .select(FRIENDSHIP_SELECT)
+          .or(`requester_id.eq.${profileId},addressee_id.eq.${profileId}`)
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("user_blocks")
+          .select("blocked_id")
+          .eq("blocker_id", userId)
+          .eq("blocked_id", profileId)
+          .maybeSingle(),
+      ]);
+
+      setBlocked(Boolean(blockRow));
 
       if (loadError) {
         setError("친구 자리를 확인하지 못했습니다.");
@@ -267,7 +279,12 @@ export default function FriendActions({ profileId, returnTo }) {
   return (
     <div className="mt-10">
       <div className="flex flex-wrap gap-2">
-        {relation === "accepted" ? (
+        {blocked ? (
+          <p className="w-full text-sm leading-7 text-ink-soft">
+            차단 중이라 글과 친구 요청이 닫혀 있습니다.
+          </p>
+        ) : null}
+        {!blocked && relation === "accepted" ? (
           <>
             <Link href={friendDiaryHref(profileId)} className="btn-quiet">
               나눈 일기 보기
@@ -277,7 +294,7 @@ export default function FriendActions({ profileId, returnTo }) {
             </button>
           </>
         ) : null}
-        {relation === "incoming" ? (
+        {!blocked && relation === "incoming" ? (
           <>
             <button type="button" className="btn-quiet" onClick={acceptFriend} disabled={busy}>
               {pending === "accept" ? "담는 중…" : "요청 수락"}
@@ -287,21 +304,35 @@ export default function FriendActions({ profileId, returnTo }) {
             </button>
           </>
         ) : null}
-        {relation === "outgoing" ? (
+        {!blocked && relation === "outgoing" ? (
           <button type="button" className="btn-ghost" onClick={cancelRequest} disabled={busy}>
             {pending === "cancel" ? "거두는 중…" : "요청 취소"}
           </button>
         ) : null}
-        {relation === "none" || relation === "declined_by_me" || relation === "declined_by_them" ? (
+        {!blocked &&
+        (relation === "none" || relation === "declined_by_me" || relation === "declined_by_them") ? (
           <button type="button" className="btn-quiet" onClick={requestFriend} disabled={busy}>
             {pending === "request" ? "보내는 중…" : "친구 요청"}
           </button>
         ) : null}
+        <BlockControl
+          profileId={profileId}
+          currentUserId={user.id}
+          blocked={blocked}
+          appearance="button"
+          disabled={busy}
+          onChanged={(nextBlocked) => {
+            setBlocked(nextBlocked);
+            if (nextBlocked) {
+              setFriendship(null);
+            }
+          }}
+        />
       </div>
-      {relation === "outgoing" ? (
+      {!blocked && relation === "outgoing" ? (
         <p className="mt-4 text-sm leading-7 text-ink-soft">요청을 보내 두었습니다. 상대가 받아들이기를 기다립니다.</p>
       ) : null}
-      {relation === "accepted" ? (
+      {!blocked && relation === "accepted" ? (
         <p className="mt-4 font-serif text-sm tracking-[0.22em] text-sage-deep">가까운 친구</p>
       ) : null}
       {error ? (
