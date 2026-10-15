@@ -885,6 +885,50 @@ li:last-child > .friend-row {
   transform: scaleX(1);
 }
 
+.site-footer {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+.site-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.legal-section {
+  scroll-margin-top: 5.5rem;
+}
+
+.consent-overlay {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+.consent-lock {
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .site-footer {
+    padding-bottom: 2.5rem;
+  }
+
+  .consent-overlay {
+    align-items: center;
+  }
+}
+
 .bottom-nav {
   position: fixed;
   right: 0;

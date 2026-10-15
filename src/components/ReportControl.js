@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -123,6 +124,13 @@ export default function ReportControl({
           <p className="text-sm leading-7 text-ink-soft">
             이 자리가 불편하다면, 이유를 하나만 골라 주세요. 바로 처벌하지 않고
             천천히 살펴 봅니다.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-ink-soft">
+            존중하는 말로 적어 주세요. 기준은{" "}
+            <Link href="/guide" className="text-sage-deep underline-offset-4 hover:underline">
+              운영 정책
+            </Link>
+            에 있습니다.
           </p>
           <fieldset className="mt-4 space-y-2">
             <legend className="sr-only">신고 이유</legend>

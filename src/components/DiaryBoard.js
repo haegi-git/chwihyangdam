@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import DiaryCalendar from "@/components/DiaryCalendar";
+import PolicyNote from "@/components/PolicyNote";
 import ShareBadge from "@/components/ShareBadge";
 import {
   DIARY_BODY_MAX,
@@ -451,6 +452,7 @@ function DayPanel({
             ? "이 날에 짧은 한 줄을 남겨 보세요. 제목만 있어도 됩니다."
             : "고친 뒤에는 이 날의 글만 바뀝니다."}
         </p>
+        <PolicyNote />
 
         <label className="mt-7 block text-sm text-ink-soft" htmlFor="diary-title">
           제목
