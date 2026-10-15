@@ -16,6 +16,8 @@ import {
   hobbyChoices,
   initialCategoryId,
   initialHobbyId,
+  hobbyTitleError,
+  HOBBY_TITLE_MAX,
   postLabelWriteError,
 } from "./post-labels.js";
 
@@ -115,5 +117,18 @@ describe("board categories and hobby labels", () => {
       "분류를 골라 주세요.",
     );
     assert.equal(postLabelWriteError({ message: "network" }, "실패"), "실패");
+    assert.equal(HOBBY_TITLE_MAX, 20);
+    assert.equal(hobbyTitleError("  짧은 제목  "), "");
+    assert.equal(hobbyTitleError("가".repeat(20)), "");
+    assert.equal(hobbyTitleError(`${"가".repeat(10)} ${"나".repeat(9)}`), "");
+    assert.equal(hobbyTitleError(`${"가".repeat(10)} ${"나".repeat(10)}`), "제목은 20자까지 적을 수 있습니다.");
+    assert.equal(hobbyTitleError(`  ${"가".repeat(21)}  `), "제목은 20자까지 적을 수 있습니다.");
+    assert.equal(
+      postLabelWriteError(
+        { message: 'new row for relation "hobby_posts" violates check constraint "hobby_posts_title_length"' },
+        "실패",
+      ),
+      "제목은 20자까지 적을 수 있습니다.",
+    );
   });
 });
