@@ -85,7 +85,7 @@ export default function NotificationBell() {
   return (
     <Link
       href="/notifications"
-      className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-soft transition-colors duration-500 hover:bg-paper-deep/80 hover:text-ink"
+      className="relative inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-colors duration-500 hover:bg-paper-deep/80 hover:text-ink"
       aria-label={label}
     >
       <BellIcon />

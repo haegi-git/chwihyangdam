@@ -151,7 +151,7 @@ export default async function HobbiesPage({ searchParams }) {
                   q: "",
                   scope: "all",
                 })}
-                className="board-search-clear"
+                className="board-search-clear cursor-pointer"
                 aria-label="검색 지우기"
               >
                 ×
@@ -200,7 +200,7 @@ function FilterChip({ href, current, children }) {
     <Link
       href={href}
       aria-current={current ? "true" : undefined}
-      className="chip"
+      className="chip cursor-pointer"
     >
       {children}
     </Link>

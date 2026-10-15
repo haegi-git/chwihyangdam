@@ -488,7 +488,7 @@ function DayPanel({
 
         <fieldset className="diary-visibility mt-6" disabled={busy}>
           <legend className="text-sm text-ink-soft">누가 볼 수 있는지</legend>
-          <label className={`diary-visibility-option${!shared ? " is-on" : ""}`}>
+          <label className={`diary-visibility-option cursor-pointer${!shared ? " is-on" : ""}`}>
             <input
               type="radio"
               name="diary-visibility"
@@ -499,7 +499,7 @@ function DayPanel({
             <span className="block text-sm text-ink">나만 보기 (비공개)</span>
             <span className="mt-1 block text-sm leading-6 text-ink-soft">이 날은 나만 읽습니다.</span>
           </label>
-          <label className={`diary-visibility-option${shared ? " is-on" : ""}`}>
+          <label className={`diary-visibility-option cursor-pointer${shared ? " is-on" : ""}`}>
             <input
               type="radio"
               name="diary-visibility"

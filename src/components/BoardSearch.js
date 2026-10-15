@@ -53,7 +53,7 @@ export default function BoardSearch({ categoryId = "", hobbyId = "", q = "", sco
         id="board-scope"
         name="scope"
         defaultValue={scope}
-        className="board-scope"
+        className="board-scope cursor-pointer"
         onChange={onScopeChange}
       >
         <option value="all">제목+본문</option>

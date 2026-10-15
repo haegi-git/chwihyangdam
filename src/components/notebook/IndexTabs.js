@@ -9,7 +9,7 @@ export default function IndexTabs({ label = "분류", items }) {
             <Link
               href={item.href}
               aria-current={item.current ? "true" : undefined}
-              className="index-tab"
+              className="index-tab cursor-pointer"
             >
               {item.label}
             </Link>
