@@ -1,3 +1,12 @@
+import {
+  BOARD_PAGE_SIZE,
+  boardPageCount,
+  isSearchableQuery,
+  likeContains,
+  normalizeBoardQuery,
+  titleBodyOrFilter,
+} from "./board.js";
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -112,6 +121,85 @@ export function fetchHobbyTags(supabase) {
   return fetchLabelRows(supabase, "hobby_tags");
 }
 
+const AUTHOR_SEARCH_LIMIT = 80;
+
+export async function fetchHobbyBoard(
+  supabase,
+  { categoryId = "", hobbyTagId = "", query = "", scope = "all", page = 1 } = {},
+) {
+  const q = normalizeBoardQuery(query);
+  const searching = isSearchableQuery(q);
+  const requested = Math.max(1, page);
+  let authorIds = null;
+
+  if (searching && scope === "author") {
+    authorIds = await findAuthorIds(supabase, q);
+    if (!authorIds) {
+      return { posts: [], total: 0, page: 1, error: true };
+    }
+    if (!authorIds.length) {
+      return { posts: [], total: 0, page: 1, error: false };
+    }
+  }
+
+  async function loadPage(pageNumber) {
+    const from = (pageNumber - 1) * BOARD_PAGE_SIZE;
+    const to = from + BOARD_PAGE_SIZE - 1;
+    let request = supabase
+      .from("hobby_posts")
+      .select(POST_SELECT, { count: "exact" })
+      .order("created_at", { ascending: false });
+
+    if (categoryId) {
+      request = request.eq("category_id", categoryId);
+    }
+
+    if (hobbyTagId) {
+      request = request.eq("hobby_tag_id", hobbyTagId);
+    }
+
+    if (searching && scope === "title") {
+      request = request.ilike("title", likeContains(q));
+    } else if (searching && scope !== "author") {
+      request = request.or(titleBodyOrFilter(q));
+    }
+
+    if (authorIds) {
+      request = request.in("author_id", authorIds);
+    }
+
+    const { data, error, count } = await request.range(from, to);
+
+    if (error) {
+      console.error("hobby_posts", error);
+      return { rows: [], total: 0, error: true };
+    }
+
+    return { rows: data ?? [], total: count ?? 0, error: false };
+  }
+
+  let result = await loadPage(requested);
+  if (result.error) {
+    return { posts: [], total: 0, page: 1, error: true };
+  }
+
+  const lastPage = boardPageCount(result.total);
+  const resolved = result.total === 0 ? 1 : Math.min(requested, lastPage);
+  if (resolved !== requested && result.total > 0) {
+    result = await loadPage(resolved);
+    if (result.error) {
+      return { posts: [], total: 0, page: 1, error: true };
+    }
+  }
+
+  return {
+    posts: await attachAuthors(supabase, result.rows),
+    total: result.total,
+    page: resolved,
+    error: false,
+  };
+}
+
 export async function fetchHobbyPosts(supabase, { categoryId = "", hobbyTagId = "" } = {}) {
   let query = supabase
     .from("hobby_posts")
@@ -199,6 +287,21 @@ export async function fetchHobbyCommentsForPost(supabase, postId) {
   }
 
   return attachAuthors(supabase, data ?? []);
+}
+
+async function findAuthorIds(supabase, query) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("display_name", likeContains(query))
+    .limit(AUTHOR_SEARCH_LIMIT);
+
+  if (error) {
+    console.error("profile search", error);
+    return null;
+  }
+
+  return (data ?? []).map((row) => row.id).filter(Boolean);
 }
 
 async function attachAuthors(supabase, rows) {
