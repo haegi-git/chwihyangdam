@@ -142,14 +142,7 @@ export async function fetchHobbyBoard(
     }
   }
 
-  async function loadPage(pageNumber) {
-    const from = (pageNumber - 1) * BOARD_PAGE_SIZE;
-    const to = from + BOARD_PAGE_SIZE - 1;
-    let request = supabase
-      .from("hobby_posts")
-      .select(POST_SELECT, { count: "exact" })
-      .order("created_at", { ascending: false });
-
+  function applyFilters(request) {
     if (categoryId) {
       request = request.eq("category_id", categoryId);
     }
@@ -168,7 +161,39 @@ export async function fetchHobbyBoard(
       request = request.in("author_id", authorIds);
     }
 
-    const { data, error, count } = await request.range(from, to);
+    return request;
+  }
+
+  async function countMatching() {
+    const { count, error } = await applyFilters(
+      supabase.from("hobby_posts").select("id", { count: "exact", head: true }),
+    );
+
+    if (error) {
+      console.error("hobby_posts", error);
+      return null;
+    }
+
+    return count ?? 0;
+  }
+
+  async function loadPage(pageNumber) {
+    const from = (pageNumber - 1) * BOARD_PAGE_SIZE;
+    const to = from + BOARD_PAGE_SIZE - 1;
+    const { data, error, count } = await applyFilters(
+      supabase
+        .from("hobby_posts")
+        .select(POST_SELECT, { count: "exact" })
+        .order("created_at", { ascending: false }),
+    ).range(from, to);
+
+    if (error?.code === "PGRST103") {
+      const total = await countMatching();
+      if (total == null) {
+        return { rows: [], total: 0, error: true };
+      }
+      return { rows: [], total, error: false };
+    }
 
     if (error) {
       console.error("hobby_posts", error);
