@@ -51,8 +51,24 @@ export function initialHobbyId(post, hobbies) {
   return "";
 }
 
+export const HOBBY_TITLE_MAX = 40;
+
+export function hobbyTitleLength(value) {
+  return Array.from(String(value ?? "").trim()).length;
+}
+
+export function hobbyTitleError(value) {
+  if (hobbyTitleLength(value) > HOBBY_TITLE_MAX) {
+    return `제목은 ${HOBBY_TITLE_MAX}자까지 적을 수 있습니다.`;
+  }
+  return "";
+}
+
 export function postLabelWriteError(error, fallback) {
   const text = String(error?.message ?? "").toLowerCase();
+  if (text.includes("hobby_posts_title_length")) {
+    return `제목은 ${HOBBY_TITLE_MAX}자까지 적을 수 있습니다.`;
+  }
   if (
     text.includes("category is required") ||
     (text.includes("category_id") && text.includes("null"))

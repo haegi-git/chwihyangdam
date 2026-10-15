@@ -92,7 +92,7 @@ export default async function HobbyPostPage({ params }) {
       <article className="paper-sheet relative mt-8 p-7 md:p-10">
         <WashiTape tone="pink" />
         {post.hidden_at ? <HiddenNotice className="mb-6" /> : null}
-        <h1 className="display text-4xl text-ink md:text-5xl">
+        <h1 className="display post-title text-2xl text-ink md:text-3xl">
           <HobbyMark name={hobby} />
           {post.title}
         </h1>

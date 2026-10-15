@@ -21,8 +21,8 @@ export default function HobbyPostCard({ post, index = 0, layout = "row", highlig
       <article className="post-row">
         {post.hidden_at ? <HiddenNotice className="mb-2" /> : null}
         <div className="md:flex md:items-baseline md:justify-between md:gap-4">
-          <h3 className="text-lg leading-8 text-ink md:min-w-0">
-            <Link href={`/hobbies/post/${post.id}`} className="hover:text-sage-deep">
+          <h3 className="min-w-0 text-lg leading-8 text-ink">
+            <Link href={`/hobbies/post/${post.id}`} className="post-row-title hover:text-sage-deep">
               <HighlighterTag name={hobby} />
               <HighlightedText text={post.title} term={highlight} />
             </Link>
@@ -66,7 +66,7 @@ export default function HobbyPostCard({ post, index = 0, layout = "row", highlig
         </Link>
       </div>
       <h3 className="display mt-5 text-3xl text-ink">
-        <Link href={`/hobbies/post/${post.id}`} className="hover:text-sage-deep">
+        <Link href={`/hobbies/post/${post.id}`} className="post-card-title hover:text-sage-deep">
           <HighlighterTag name={hobby} />
           <HighlightedText text={post.title} term={highlight} />
         </Link>

@@ -354,6 +354,29 @@ li:last-child > .friend-row {
   border-bottom: none;
 }
 
+.post-row-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.post-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.post-title {
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 .lined-page {
   padding: 1.7rem 1.4rem 1.6rem 1.5rem;
   border-left: 2px solid color-mix(in srgb, var(--stamp) 55%, transparent);

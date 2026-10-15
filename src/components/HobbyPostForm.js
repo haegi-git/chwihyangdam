@@ -31,13 +31,15 @@ import { composeHref } from "@/lib/board";
 import {
   categoryChoices,
   hobbyChoices,
+  hobbyTitleError,
+  hobbyTitleLength,
+  HOBBY_TITLE_MAX,
   initialCategoryId,
   initialHobbyId,
   postLabelWriteError,
 } from "@/lib/post-labels";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-const TITLE_MAX = 80;
 const BODY_MAX = 4000;
 const LINE_HEIGHT = 36;
 
@@ -306,11 +308,17 @@ export default function HobbyPostForm({
   async function handleSubmit(event) {
     event.preventDefault();
 
-    const nextTitle = title.trim().slice(0, TITLE_MAX);
+    const nextTitle = title.trim();
     const nextBody = bodyFromBlocks(blocks);
+    const titleError = hobbyTitleError(nextTitle);
 
     if (!categoryId) {
       setError("분류를 골라 주세요.");
+      return;
+    }
+
+    if (titleError) {
+      setError(titleError);
       return;
     }
 
@@ -487,13 +495,23 @@ export default function HobbyPostForm({
       <input
         id="hobby-post-title"
         value={title}
-        onChange={(event) => setTitle(event.target.value.slice(0, TITLE_MAX))}
+        onChange={(event) => {
+          const next = event.target.value;
+          const nextLength = hobbyTitleLength(next);
+          if (nextLength <= HOBBY_TITLE_MAX || nextLength < hobbyTitleLength(title)) {
+            setTitle(next);
+          }
+        }}
         className="field-quiet mt-2 rounded-2xl px-4 py-3"
         placeholder="오늘의 한 조각"
-        maxLength={TITLE_MAX}
+        maxLength={hobbyTitleLength(title) > HOBBY_TITLE_MAX ? undefined : HOBBY_TITLE_MAX}
       />
-      <p className="mt-2 text-xs tracking-wide text-ink-soft">
-        {title.trim().length}/{TITLE_MAX}
+      <p
+        className={`mt-2 text-xs tracking-wide ${
+          hobbyTitleLength(title) > HOBBY_TITLE_MAX ? "text-clay" : "text-ink-soft"
+        }`}
+      >
+        {hobbyTitleLength(title)}/{HOBBY_TITLE_MAX}
       </p>
 
       <div className="mt-6">
