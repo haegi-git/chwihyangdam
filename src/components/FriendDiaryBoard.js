@@ -39,7 +39,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
   );
   const range = today ? diaryRange(fromDateKey(today)) : null;
   const [user, setUser] = useState(() => (configured ? undefined : null));
-  const [isFriend, setIsFriend] = useState(null);
+  const [access, setAccess] = useState(null);
   const [blocked, setBlocked] = useState(false);
   const [view, setView] = useState(null);
   const [entries, setEntries] = useState({});
@@ -71,8 +71,13 @@ export default function FriendDiaryBoard({ authorId, author }) {
     range && year === yearMonthOf(range.todayKey)?.year && month === yearMonthOf(range.todayKey)?.month,
   );
   const own = Boolean(user && user.id === authorId);
+  const accessReady = Boolean(
+    user && access && access.userId === user.id && access.authorId === authorId,
+  );
+  const isFriend = accessReady ? access.isFriend : null;
+  const granted = accessReady ? access.granted : null;
   const gridKey =
-    user && !own && isFriend && weeks.length
+    user && !own && isFriend && granted && weeks.length
       ? `${weeks[0][0].key}:${weeks[weeks.length - 1][weeks[0].length - 1].key}`
       : "";
   const loading = Boolean(gridKey && loadedKey !== gridKey);
@@ -90,7 +95,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
       setUser(nextUser);
 
       if (!nextUser) {
-        setIsFriend(null);
+        setAccess(null);
         setEntries({});
         setLoadedKey("");
       }
@@ -129,22 +134,37 @@ export default function FriendDiaryBoard({ authorId, author }) {
       .eq("blocker_id", user.id)
       .eq("blocked_id", authorId)
       .maybeSingle();
+    const grantLookup = supabase
+      .from("diary_share_grants")
+      .select("friend_id")
+      .eq("owner_id", authorId)
+      .eq("friend_id", user.id)
+      .maybeSingle();
 
-    Promise.all([friendLookup, blockLookup]).then(([friendResult, blockResult]) => {
-      if (cancelled) {
-        return;
-      }
+    Promise.all([friendLookup, blockLookup, grantLookup]).then(
+      ([friendResult, blockResult, grantResult]) => {
+        if (cancelled) {
+          return;
+        }
 
-      if (friendResult.error) {
-        setError("친구 자리를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
-        setIsFriend(false);
-      } else {
+        setBlocked(Boolean(blockResult.data));
+
+        if (friendResult.error) {
+          setError("친구 자리를 확인하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+          setAccess({ userId: user.id, authorId, isFriend: false, granted: false });
+          return;
+        }
+
+        const friend = Boolean(friendResult.data);
         setError("");
-        setIsFriend(Boolean(friendResult.data));
-      }
-
-      setBlocked(Boolean(blockResult.data));
-    });
+        setAccess({
+          userId: user.id,
+          authorId,
+          isFriend: friend,
+          granted: friend && !grantResult.error && Boolean(grantResult.data),
+        });
+      },
+    );
 
     return () => {
       cancelled = true;
@@ -152,7 +172,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
   }, [user, own, authorId, configured]);
 
   useEffect(() => {
-    if (!user || !isFriend || !gridKey) {
+    if (!user || !granted || !gridKey) {
       return undefined;
     }
 
@@ -186,7 +206,7 @@ export default function FriendDiaryBoard({ authorId, author }) {
     return () => {
       cancelled = true;
     };
-  }, [user, isFriend, gridKey, authorId]);
+  }, [user, granted, gridKey, authorId]);
 
   function moveMonth(delta) {
     const next = shiftMonth(year, month, delta);
@@ -282,14 +302,18 @@ export default function FriendDiaryBoard({ authorId, author }) {
       onChanged={(nextBlocked) => {
         setBlocked(nextBlocked);
         if (nextBlocked) {
-          setIsFriend(false);
+          setAccess((current) =>
+            current && current.authorId === authorId
+              ? { ...current, isFriend: false, granted: false }
+              : current,
+          );
           setEntries({});
         }
       }}
     />
   );
 
-  if (isFriend === null) {
+  if (isFriend === null || (isFriend && granted === null)) {
     return (
       <div>
         <Intro name={name} author={author} action={blockAction} />
@@ -304,8 +328,30 @@ export default function FriendDiaryBoard({ authorId, author }) {
         <Intro name={name} author={author} action={blockAction} />
         <GateCard
           kicker="아직 닫혀 있습니다"
-          title="친구가 되면 열립니다"
-          body="요청을 주고받은 뒤에, 이 사람이 체크한 날만 읽을 수 있습니다. 혼자 보는 날은 열리지 않습니다."
+          title="친구만 열 수 있습니다"
+          body="친구가 된 뒤에, 이 사람이 일기 공유를 허용해야 달력이 열립니다. 친구 공개로 남긴 날만 보입니다."
+        >
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link href={profileHref(authorId)} className="btn-quiet">
+              프로필 보기
+            </Link>
+            <Link href="/friends" className="btn-ghost">
+              친구 자리
+            </Link>
+          </div>
+        </GateCard>
+      </div>
+    );
+  }
+
+  if (!granted) {
+    return (
+      <div>
+        <Intro name={name} author={author} action={blockAction} />
+        <GateCard
+          kicker="아직 닫혀 있습니다"
+          title="이 일기는 아직 열리지 않았어요"
+          body="친구가 되어도 일기는 저절로 열리지 않습니다. 이 사람이 일기 공유를 허용하고, 친구 공개로 남긴 날만 여기서 읽을 수 있습니다."
         >
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link href={profileHref(authorId)} className="btn-quiet">
@@ -348,7 +394,6 @@ export default function FriendDiaryBoard({ authorId, author }) {
         onSelect={selectDay}
         caption={`${name}의 ${monthTitle} 나눈 일기`}
         emptyLabel="나누지 않음"
-        filledLabel="나눈 일기 있음"
       />
 
       {error ? (
@@ -388,8 +433,8 @@ function Intro({ name, author, action = null }) {
         {name}의 일기
       </h1>
       <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
-        친구가 체크한 날만 보입니다. 비워 둔 날과 혼자 보는 날은 내용이 열리지
-        않습니다.
+        일기 공유를 허용한 친구만, 친구 공개로 남긴 날을 볼 수 있습니다. 나만
+        보기로 남긴 날은 열리지 않습니다.
       </p>
       <div className="rise-in rise-in-3 mt-8 flex flex-wrap items-center gap-4">
         <PersonFace profile={author} size="sm">
@@ -410,8 +455,8 @@ function ReadDayPanel({ dateKey, entry }) {
         </h2>
         <p className="mt-4 text-lg text-ink">나누지 않은 날</p>
         <p className="mt-3 text-sm leading-7 text-ink-soft">
-          이 날은 비어 있거나, 혼자만 보는 글입니다. 친구가 공유를 켠 날만 읽을
-          수 있습니다.
+          이 날은 비어 있거나, 나만 보기로 남겨 둔 글입니다. 친구 공개로 남긴 날만
+          읽을 수 있습니다.
         </p>
       </section>
     );

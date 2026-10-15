@@ -1,6 +1,8 @@
 import WashiTape from "@/components/notebook/WashiTape";
 import {
   DIARY_WEEKDAYS,
+  diaryVisibilityAria,
+  diaryVisibilityLabel,
   formatDiaryDate,
   isKeyInRange,
 } from "@/lib/diary";
@@ -20,7 +22,6 @@ export default function DiaryCalendar({
   onSelect,
   caption,
   emptyLabel = "비어 있음",
-  filledLabel = "일기 있음",
 }) {
   return (
     <section className="diary-calendar mt-10 p-5 md:p-7">
@@ -107,16 +108,15 @@ export default function DiaryCalendar({
                       disabled={!inRange}
                       aria-pressed={selected}
                       aria-current={isToday ? "date" : undefined}
-                      aria-label={`${formatDiaryDate(cell.key)}${
-                        hasEntry ? `, ${filledLabel}` : `, ${emptyLabel}`
+                      aria-label={`${formatDiaryDate(cell.key)}, ${
+                        hasEntry ? diaryVisibilityAria(shared) : emptyLabel
                       }`}
                     >
                       <span>{cell.day}</span>
                       {hasEntry ? (
-                        <span
-                          className={`diary-day-mark${shared ? " is-shared" : ""}`}
-                          aria-hidden="true"
-                        />
+                        <span className={`diary-mode-badge${shared ? " is-shared" : ""}`}>
+                          {diaryVisibilityLabel(shared, { compact: true })}
+                        </span>
                       ) : null}
                     </button>
                   </td>

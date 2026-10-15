@@ -5,6 +5,8 @@ import {
   classifyFriendships,
   friendRequestPlan,
   friendshipWith,
+  grantedFriendIds,
+  hasDiaryGrant,
   looksLikeProfileLink,
   otherPartyId,
   profileSearchPattern,
@@ -96,5 +98,19 @@ describe("friendship helpers", () => {
     );
     assert.equal(acceptedWithFilter(me, them).includes(them), true);
     assert.equal(acceptedWithFilter(me, "not-a-uuid"), "");
+  });
+
+  it("treats diary share as a separate grant, not friendship", () => {
+    const rows = [
+      { owner_id: me, friend_id: them },
+      { friend_id: "" },
+      null,
+    ];
+
+    assert.deepEqual(grantedFriendIds(rows), [them]);
+    assert.equal(hasDiaryGrant(rows, them), true);
+    assert.equal(hasDiaryGrant(rows, other), false);
+    assert.equal(hasDiaryGrant(null, them), false);
+    assert.equal(hasDiaryGrant([], them), false);
   });
 });
