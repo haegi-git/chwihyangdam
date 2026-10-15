@@ -1,9 +1,9 @@
-import { isPostId } from "@/lib/hobbies";
+import { isPostId } from "./hobbies.js";
 
 export const REPORT_DAILY_CAP = 10;
 export const REPORT_DETAIL_MAX = 500;
 
-export const REPORT_TARGET_TYPES = ["post", "comment"];
+export const REPORT_TARGET_TYPES = ["post", "comment", "user"];
 
 export const REPORT_REASONS = [
   { value: "hate_abuse", label: "혐오·욕설" },
@@ -14,9 +14,27 @@ export const REPORT_REASONS = [
 ];
 
 export const MODERATION_ACTIONS = [
-  { value: "cleared", label: "문제없음", hint: "가림을 풀고 다시 보여 줍니다." },
-  { value: "keep_hidden", label: "가리기 유지", hint: "이 자리에선 보이지 않게 둡니다." },
+  { value: "cleared", label: "유지", hint: "가림을 풀고 신고를 접습니다." },
+  { value: "keep_hidden", label: "숨김 확정", hint: "가린 채로 둡니다." },
   { value: "removed", label: "삭제", hint: "글이나 댓글을 거둡니다. 계정은 막지 않습니다." },
+];
+
+export const REPORT_TYPE_FILTERS = [
+  { value: "all", label: "전체" },
+  { value: "post", label: "게시글" },
+  { value: "comment", label: "댓글" },
+  { value: "user", label: "사용자" },
+];
+
+export const REPORT_STATUS_FILTERS = [
+  { value: "pending", label: "대기" },
+  { value: "done", label: "처리됨" },
+  { value: "all", label: "모두" },
+];
+
+export const REPORT_SORT_FILTERS = [
+  { value: "newest", label: "최신" },
+  { value: "count", label: "신고 많은 순" },
 ];
 
 const REASON_BY_VALUE = new Map(REPORT_REASONS.map((reason) => [reason.value, reason.label]));
@@ -62,11 +80,11 @@ export function reportErrorMessage(error) {
   const text = String(error?.message ?? "").toLowerCase();
 
   if (code === "23505" || text.includes("duplicate") || text.includes("unique")) {
-    return "이미 이 글을 살펴 달라고 해 주셨어요.";
+    return "이미 살펴 달라고 해 주셨어요.";
   }
 
   if (code === "P0001" || text.includes("cannot report own")) {
-    return "내가 남긴 글은 신고하지 않아도 됩니다.";
+    return "내가 남긴 것은 신고하지 않아도 됩니다.";
   }
 
   if (code === "23514") {
@@ -74,6 +92,119 @@ export function reportErrorMessage(error) {
   }
 
   return "지금은 담지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
+}
+
+export function reportInboxStatus(reviewStatus) {
+  if (!reviewStatus || reviewStatus === "pending") {
+    return "pending";
+  }
+
+  return "done";
+}
+
+export function reportFiltersFrom(params = {}) {
+  const type = REPORT_TYPE_FILTERS.some((item) => item.value === params.type) ? params.type : "all";
+  const status = REPORT_STATUS_FILTERS.some((item) => item.value === params.status)
+    ? params.status
+    : "pending";
+  const sort = params.sort === "count" ? "count" : "newest";
+
+  return { type, status, sort };
+}
+
+export function groupReportedTargets(reports = [], reviews = []) {
+  const reviewByKey = new Map(
+    (Array.isArray(reviews) ? reviews : []).map((review) => [
+      `${review.target_type}:${review.target_id}`,
+      review,
+    ]),
+  );
+  const groups = new Map();
+
+  for (const report of Array.isArray(reports) ? reports : []) {
+    if (!isReportTargetType(report?.target_type) || !report?.target_id) {
+      continue;
+    }
+
+    const key = `${report.target_type}:${report.target_id}`;
+    let group = groups.get(key);
+
+    if (!group) {
+      const review = reviewByKey.get(key) ?? null;
+      group = {
+        key,
+        id: review?.id || key,
+        reviewId: review?.id || "",
+        target_type: report.target_type,
+        target_id: report.target_id,
+        status: review?.status || "pending",
+        inboxStatus: reportInboxStatus(review?.status),
+        reports: [],
+        reporterIds: new Set(),
+        latest_at: report.created_at || "",
+        ai_label: review?.ai_label || "",
+        ai_summary: review?.ai_summary || "",
+        ai_suggested_action: review?.ai_suggested_action || "",
+      };
+      groups.set(key, group);
+    }
+
+    group.reports.push(report);
+
+    if (report.reporter_id) {
+      group.reporterIds.add(report.reporter_id);
+    }
+
+    if (report.created_at && report.created_at > group.latest_at) {
+      group.latest_at = report.created_at;
+    }
+  }
+
+  return [...groups.values()].map((group) => ({
+    key: group.key,
+    id: group.id,
+    reviewId: group.reviewId,
+    target_type: group.target_type,
+    target_id: group.target_id,
+    status: group.status,
+    inboxStatus: group.inboxStatus,
+    reports: group.reports,
+    reportCount: group.reports.length,
+    reporterCount: group.reporterIds.size,
+    latest_at: group.latest_at,
+    reasons: reasonBreakdown(group.reports),
+    ai_label: group.ai_label,
+    ai_summary: group.ai_summary,
+    ai_suggested_action: group.ai_suggested_action,
+  }));
+}
+
+export function filterReportGroups(groups, { type = "all", status = "pending", sort = "newest" } = {}) {
+  const next = (Array.isArray(groups) ? groups : []).filter((group) => {
+    if (type !== "all" && group.target_type !== type) {
+      return false;
+    }
+
+    if (status === "pending") {
+      return group.inboxStatus === "pending";
+    }
+
+    if (status === "done") {
+      return group.inboxStatus === "done";
+    }
+
+    return true;
+  });
+
+  next.sort((left, right) => {
+    if (sort === "count") {
+      return right.reportCount - left.reportCount || String(right.latest_at).localeCompare(String(left.latest_at));
+    }
+
+    return String(right.latest_at).localeCompare(String(left.latest_at));
+  });
+
+  return next;
 }
 
 export function reasonBreakdown(reports = []) {
@@ -135,35 +266,47 @@ export async function requestModerationAiDraft({ targetType, targetId, force = f
   }
 }
 
-export async function fetchPendingModerationInbox(supabase) {
-  const { data: reviews, error } = await supabase
-    .from("moderation_reviews")
-    .select(
-      "id, target_type, target_id, status, distinct_report_count, ai_label, ai_summary, ai_suggested_action, ai_reviewed_at, created_at, updated_at",
-    )
-    .eq("status", "pending")
-    .order("updated_at", { ascending: false });
+export async function fetchReportInbox(supabase, filters = {}) {
+  const [reportsResult, reviewsResult] = await Promise.all([
+    supabase
+      .from("content_reports")
+      .select("id, reporter_id, target_type, target_id, reason, detail, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    supabase
+      .from("moderation_reviews")
+      .select(
+        "id, target_type, target_id, status, distinct_report_count, ai_label, ai_summary, ai_suggested_action, ai_reviewed_at, updated_at",
+      ),
+  ]);
 
-  if (error) {
-    console.error("moderation_reviews", error);
+  if (reportsResult.error) {
+    console.error("content_reports", reportsResult.error);
     return [];
   }
 
-  const list = reviews ?? [];
+  if (reviewsResult.error) {
+    console.error("moderation_reviews", reviewsResult.error);
+  }
 
-  if (!list.length) {
+  const grouped = filterReportGroups(
+    groupReportedTargets(reportsResult.data ?? [], reviewsResult.data ?? []),
+    filters,
+  );
+
+  if (!grouped.length) {
     return [];
   }
 
-  const postIds = list.filter((row) => row.target_type === "post").map((row) => row.target_id);
-  const commentIds = list.filter((row) => row.target_type === "comment").map((row) => row.target_id);
-  const targetIds = list.map((row) => row.target_id);
+  const postIds = grouped.filter((row) => row.target_type === "post").map((row) => row.target_id);
+  const commentIds = grouped.filter((row) => row.target_type === "comment").map((row) => row.target_id);
+  const userIds = grouped.filter((row) => row.target_type === "user").map((row) => row.target_id);
 
-  const [postsResult, commentsResult, reportsResult] = await Promise.all([
+  const [postsResult, commentsResult, usersResult] = await Promise.all([
     postIds.length
       ? supabase
           .from("hobby_posts")
-          .select("id, title, body, author_id, hidden_at, image_urls, hobby_tags ( slug, name )")
+          .select("id, title, body, author_id, hidden_at, image_urls")
           .in("id", postIds)
       : Promise.resolve({ data: [], error: null }),
     commentIds.length
@@ -172,12 +315,8 @@ export async function fetchPendingModerationInbox(supabase) {
           .select("id, body, author_id, post_id, hidden_at, parent_id")
           .in("id", commentIds)
       : Promise.resolve({ data: [], error: null }),
-    targetIds.length
-      ? supabase
-          .from("content_reports")
-          .select("id, target_type, target_id, reason, detail, created_at")
-          .in("target_id", targetIds)
-          .order("created_at", { ascending: true })
+    userIds.length
+      ? supabase.from("profiles").select("id, display_name, bio, avatar_url, suspended").in("id", userIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
@@ -187,61 +326,51 @@ export async function fetchPendingModerationInbox(supabase) {
   if (commentsResult.error) {
     console.error("moderation comments", commentsResult.error);
   }
-  if (reportsResult.error) {
-    console.error("moderation reports", reportsResult.error);
+
+  let userRows = usersResult.data ?? [];
+
+  if (usersResult.error) {
+    const fallback = userIds.length
+      ? await supabase.from("profiles").select("id, display_name, bio, avatar_url").in("id", userIds)
+      : { data: [], error: null };
+    userRows = (fallback.data ?? []).map((row) => ({ ...row, suspended: false }));
   }
 
   const posts = new Map((postsResult.data ?? []).map((row) => [row.id, row]));
   const comments = new Map((commentsResult.data ?? []).map((row) => [row.id, row]));
-  const reportsByTarget = new Map();
-
-  for (const report of reportsResult.data ?? []) {
-    const key = `${report.target_type}:${report.target_id}`;
-    const bucket = reportsByTarget.get(key) ?? [];
-    bucket.push(report);
-    reportsByTarget.set(key, bucket);
-  }
-
+  const users = new Map(userRows.map((row) => [row.id, row]));
   const authorIds = [
     ...new Set(
-      [...posts.values(), ...comments.values()]
-        .map((row) => row.author_id)
-        .filter(Boolean),
+      [...posts.values(), ...comments.values()].map((row) => row.author_id).filter(Boolean),
     ),
-  ];
-
-  let authors = new Map();
+  ].filter((id) => !users.has(id));
 
   if (authorIds.length) {
-    const { data: profiles, error: profileError } = await supabase
+    const { data: authors } = await supabase
       .from("profiles")
       .select("id, display_name, avatar_url")
       .in("id", authorIds);
 
-    if (profileError) {
-      console.error("moderation authors", profileError);
-    } else {
-      authors = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+    for (const author of authors ?? []) {
+      users.set(author.id, author);
     }
   }
 
-  return list.map((review) => {
-    const key = `${review.target_type}:${review.target_id}`;
-    const reports = (reportsByTarget.get(key) ?? []).filter(
-      (report) => report.target_type === review.target_type,
-    );
-    const post = review.target_type === "post" ? posts.get(review.target_id) ?? null : null;
-    const comment = review.target_type === "comment" ? comments.get(review.target_id) ?? null : null;
-    const target = post || comment;
-    const author = target ? authors.get(target.author_id) ?? null : null;
+  return grouped.map((group) => {
+    const post = group.target_type === "post" ? posts.get(group.target_id) ?? null : null;
+    const comment = group.target_type === "comment" ? comments.get(group.target_id) ?? null : null;
+    const profile = group.target_type === "user" ? users.get(group.target_id) ?? null : null;
+    const authorId = post?.author_id || comment?.author_id || "";
+    const author = authorId ? users.get(authorId) ?? null : profile;
 
     return {
-      ...review,
+      ...group,
+      distinct_report_count: group.reporterCount,
       post,
       comment,
+      profile,
       author,
-      reports,
-      reasons: reasonBreakdown(reports),
+      hidden: Boolean(post?.hidden_at || comment?.hidden_at),
     };
   });
 }

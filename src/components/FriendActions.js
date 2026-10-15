@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import BlockControl from "@/components/BlockControl";
+import ReportControl from "@/components/ReportControl";
 import {
   FRIENDSHIP_SELECT,
   friendDiaryHref,
@@ -312,6 +313,12 @@ export default function FriendActions({ profileId, returnTo }) {
               setFriendship(null);
             }
           }}
+        />
+        <ReportControl
+          targetType="user"
+          targetId={profileId}
+          currentUserId={user.id}
+          authorId={profileId}
         />
       </div>
       {!blocked && relation === "outgoing" ? (
