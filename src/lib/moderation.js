@@ -80,7 +80,7 @@ export function reportErrorMessage(error) {
   const text = String(error?.message ?? "").toLowerCase();
 
   if (code === "23505" || text.includes("duplicate") || text.includes("unique")) {
-    return "이미 살펴 달라고 해 주셨어요.";
+    return "이미 신고한 내용이에요";
   }
 
   if (code === "P0001" || text.includes("cannot report own")) {

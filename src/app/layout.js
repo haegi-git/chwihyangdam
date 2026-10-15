@@ -2,6 +2,7 @@ import { Gaegu, Noto_Sans_KR } from "next/font/google";
 import BottomNav from "@/components/BottomNav";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import TermsConsentGate from "@/components/TermsConsent";
 import "./globals.css";
 
 const sans = Noto_Sans_KR({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }) {
           <main className="relative flex-1">{children}</main>
           <SiteFooter />
           <BottomNav />
+          <TermsConsentGate />
         </div>
       </body>
     </html>

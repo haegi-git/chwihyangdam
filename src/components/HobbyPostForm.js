@@ -28,6 +28,7 @@ import {
   validatePostImageFile,
 } from "@/lib/post-images";
 import { composeHref } from "@/lib/board";
+import PolicyNote from "@/components/PolicyNote";
 import { SUSPENDED_WRITE_MESSAGE, readOwnSuspended } from "@/lib/profiles";
 import {
   categoryChoices,
@@ -456,6 +457,7 @@ export default function HobbyPostForm({
           ? "글을 쓰다가 사진을 넣으면 그 자리에 남습니다. 천천히 다듬어도 좋습니다."
           : "한 장의 종이에 적듯 쓰다가, 사진을 넣으면 커서 자리에 들어갑니다."}
       </p>
+      <PolicyNote />
 
       <label className="mt-8 block text-sm text-ink-soft" htmlFor="hobby-post-category">
         분류
