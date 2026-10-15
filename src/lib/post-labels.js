@@ -51,7 +51,7 @@ export function initialHobbyId(post, hobbies) {
   return "";
 }
 
-export const HOBBY_TITLE_MAX = 40;
+export const HOBBY_TITLE_MAX = 20;
 
 export function hobbyTitleLength(value) {
   return Array.from(String(value ?? "").trim()).length;
