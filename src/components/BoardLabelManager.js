@@ -138,6 +138,13 @@ export default function BoardLabelManager({ items = [], table }) {
   }
 
   async function handleToggle(item) {
+    if (
+      item.is_active &&
+      !window.confirm(`${noun}를 끌까요? 목록과 글쓰기에서 사라지고, 이미 붙은 글은 그대로 둡니다.`)
+    ) {
+      return;
+    }
+
     setPending(`${item.id}:toggle`);
     setError("");
     const supabase = await requireClient();
@@ -160,8 +167,32 @@ export default function BoardLabelManager({ items = [], table }) {
     router.refresh();
   }
 
+  async function handleDelete(item) {
+    if (!window.confirm(`${noun} “${item.name}”을 지울까요? 이미 쓰인 이름은 끄기만 됩니다.`)) {
+      return;
+    }
+
+    setPending(`${item.id}:delete`);
+    setError("");
+    const supabase = await requireClient();
+    if (!supabase) {
+      setPending("");
+      return;
+    }
+
+    const { error: deleteError } = await supabase.from(table).delete().eq("id", item.id);
+    setPending("");
+
+    if (deleteError) {
+      setError(`이미 붙은 글이 있어 지우지 못했습니다. 끄기로 목록에서만 빼 주세요.`);
+      return;
+    }
+
+    router.refresh();
+  }
+
   return (
-    <div className="mt-12 space-y-8">
+    <div className="space-y-8">
       <form onSubmit={handleAdd} className="paper-sheet rounded-[1.85rem] p-7 md:p-8">
         <label className="block text-sm text-ink-soft" htmlFor={`${table}-name`}>
           {addLabel}
@@ -192,7 +223,8 @@ export default function BoardLabelManager({ items = [], table }) {
               name: item.name,
               sort_order: String(item.sort_order),
             };
-            const saving = pending === item.id || pending === `${item.id}:toggle`;
+            const saving =
+              pending === item.id || pending === `${item.id}:toggle` || pending === `${item.id}:delete`;
 
             return (
               <li key={item.id} className="paper-sheet rounded-[1.85rem] p-6 md:p-7">
@@ -203,7 +235,7 @@ export default function BoardLabelManager({ items = [], table }) {
                   <span aria-hidden="true">·</span>
                   <span>{table === "hobby_tags" ? `[${item.name}]` : item.name}</span>
                 </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_6rem_auto_auto] md:items-end">
+                <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_6rem_auto_auto_auto] md:items-end">
                   <div>
                     <label className="block text-sm text-ink-soft" htmlFor={`${table}-name-${item.id}`}>
                       이름
@@ -251,6 +283,9 @@ export default function BoardLabelManager({ items = [], table }) {
                   </button>
                   <button type="button" className="btn-ghost" onClick={() => handleToggle(item)} disabled={saving}>
                     {pending === `${item.id}:toggle` ? "바꾸는 중…" : item.is_active ? "끄기" : "켜기"}
+                  </button>
+                  <button type="button" className="btn-ghost" onClick={() => handleDelete(item)} disabled={saving}>
+                    {pending === `${item.id}:delete` ? "지우는 중…" : "지우기"}
                   </button>
                 </div>
               </li>

@@ -20,6 +20,30 @@ export function isAdminUser(profile) {
   return Boolean(profile?.is_admin);
 }
 
+export const SUSPENDED_WRITE_MESSAGE = "정지된 자리에서는 글과 댓글을 남길 수 없습니다.";
+
+export function isSuspendedProfile(profile) {
+  return Boolean(profile?.suspended);
+}
+
+export async function readOwnSuspended(supabase, userId) {
+  if (!supabase || !userId) {
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("suspended")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return false;
+  }
+
+  return isSuspendedProfile(data);
+}
+
 export function displayNameFromAuth(user) {
   if (!user) {
     return "";

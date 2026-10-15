@@ -175,18 +175,9 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
         프로필
       </Link>
       {admin ? (
-        <>
-          <p className="account-menu-label">관리자</p>
-          <Link href="/admin/reports" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
-            살펴보기
-          </Link>
-          <Link href="/admin/categories" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
-            분류
-          </Link>
-          <Link href="/admin/hobbies" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
-            말머리
-          </Link>
-        </>
+        <Link href="/admin" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
+          관리자 페이지
+        </Link>
       ) : null}
       <button type="button" className="account-menu-item cursor-pointer" role="menuitem" onClick={handleSignOut}>
         로그아웃

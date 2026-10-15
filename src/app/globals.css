@@ -1268,6 +1268,75 @@ button.account-menu-item {
   text-align: center;
 }
 
+.admin-shell {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin-nav::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.admin-nav a {
+  display: inline-flex;
+  min-height: 2.6rem;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 0.95rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.admin-nav a[aria-current="page"] {
+  background: var(--sage-deep);
+  color: #f7f3ea;
+}
+
+.admin-counts {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (min-width: 768px) {
+  .admin-counts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-shell {
+    grid-template-columns: 13rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .admin-nav {
+    position: sticky;
+    top: 5.5rem;
+    flex-direction: column;
+    overflow: visible;
+    border: 1px solid color-mix(in srgb, var(--line) 90%, var(--ink));
+    border-radius: 1.05rem;
+    background: var(--card);
+    padding: 0.7rem;
+  }
+
+  .admin-nav a {
+    border-radius: 0.7rem;
+  }
+}
+
 @media (max-width: 480px) {
   .board-pager-word {
     display: none;

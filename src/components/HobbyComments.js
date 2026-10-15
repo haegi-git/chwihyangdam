@@ -16,6 +16,7 @@ import {
   trimCommentBody,
 } from "@/lib/hobbies";
 import { loginHref } from "@/lib/paths";
+import { SUSPENDED_WRITE_MESSAGE, readOwnSuspended } from "@/lib/profiles";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export default function HobbyComments({
@@ -79,6 +80,10 @@ export default function HobbyComments({
       row.parent_id = parentId;
     }
 
+    if (await readOwnSuspended(session.supabase, session.user.id)) {
+      return "suspended";
+    }
+
     const { error: insertError } = await session.supabase.from("hobby_comments").insert(row);
 
     if (insertError) {
@@ -107,6 +112,11 @@ export default function HobbyComments({
     setError("");
 
     const saved = await insertComment(body);
+
+    if (saved === "suspended") {
+      fail(SUSPENDED_WRITE_MESSAGE);
+      return;
+    }
 
     if (!saved) {
       fail("댓글을 남기지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
@@ -137,6 +147,11 @@ export default function HobbyComments({
     setError("");
 
     const saved = await insertComment(body, parentId);
+
+    if (saved === "suspended") {
+      fail(SUSPENDED_WRITE_MESSAGE);
+      return;
+    }
 
     if (!saved) {
       fail("답글을 남기지 못했습니다. 잠시 뒤 다시 시도해 주세요.");

@@ -77,10 +77,12 @@ function buildUserPrompt(context) {
         .join("\n")
     : "(신고 사유 없음)";
 
-  const title = context?.title ? String(context.title) : "(댓글)";
+  const kind =
+    context?.target_type === "comment" ? "댓글" : context?.target_type === "user" ? "사용자" : "글";
+  const title = context?.title ? String(context.title) : `(${kind})`;
   const body = String(context?.body ?? "").slice(0, 4000);
 
-  return `대상: ${context?.target_type === "comment" ? "댓글" : "글"}
+  return `대상: ${kind}
 신고 수: ${context?.distinct_report_count ?? reports.length}
 
 제목:

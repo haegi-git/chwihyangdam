@@ -28,6 +28,7 @@ import {
   validatePostImageFile,
 } from "@/lib/post-images";
 import { composeHref } from "@/lib/board";
+import { SUSPENDED_WRITE_MESSAGE, readOwnSuspended } from "@/lib/profiles";
 import {
   categoryChoices,
   hobbyChoices,
@@ -351,6 +352,12 @@ export default function HobbyPostForm({
         ? `/hobbies/post/${post.id}/edit`
         : composeHref({ categoryId, hobbyId });
       router.replace(loginHref(nextPath));
+      return;
+    }
+
+    if (!isEdit && (await readOwnSuspended(supabase, user.id))) {
+      setPending(false);
+      setError(SUSPENDED_WRITE_MESSAGE);
       return;
     }
 

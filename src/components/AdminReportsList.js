@@ -29,9 +29,25 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
     if (action === "removed") {
       const confirmed = window.confirm(
         item.target_type === "comment"
-          ? "이 댓글을 거둘까요? 글에서 사라집니다. 사람은 막지 않습니다."
-          : "이 글을 거둘까요? 목록에서 사라집니다. 사람은 막지 않습니다.",
+          ? "이 댓글을 삭제할까요? 글에서 사라집니다."
+          : "이 글을 삭제할까요? 목록에서 사라집니다.",
       );
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    if (action === "keep_hidden") {
+      const confirmed = window.confirm("숨김을 확정할까요? 이 내용은 목록에서 보이지 않습니다.");
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    if (action === "suspend") {
+      const confirmed = window.confirm("이 사용자를 정지할까요? 글과 댓글을 새로 남기지 못합니다.");
 
       if (!confirmed) {
         return;
@@ -53,9 +69,24 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
     }
 
     const now = new Date().toISOString();
+
+    if (item.target_type === "user") {
+      const suspended = action !== "cleared";
+      const { error: suspendError } = await supabase.rpc("set_profile_suspended", {
+        target: item.target_id,
+        next_suspended: suspended,
+      });
+
+      if (suspendError) {
+        setPendingId("");
+        setError("정지를 바꾸지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+        return;
+      }
+    }
+
     const table = item.target_type === "comment" ? "hobby_comments" : "hobby_posts";
 
-    if (action === "cleared") {
+    if (item.target_type !== "user" && action === "cleared") {
       const { error: updateError } = await supabase
         .from(table)
         .update({ hidden_at: null, hide_reason: null })
@@ -66,7 +97,7 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
         setError("가림을 풀지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
         return;
       }
-    } else if (action === "keep_hidden") {
+    } else if (item.target_type !== "user" && action === "keep_hidden") {
       const { error: updateError } = await supabase
         .from(table)
         .update({
@@ -80,7 +111,7 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
         setError("가림을 유지하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
         return;
       }
-    } else if (action === "removed") {
+    } else if (item.target_type !== "user" && action === "removed") {
       if (item.target_type === "post" && item.post) {
         await removeOwnedPostImages(
           supabase,
@@ -98,15 +129,20 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
       }
     }
 
-    const { error: reviewError } = await supabase
-      .from("moderation_reviews")
-      .update({
-        status: action,
-        decided_by: user.id,
-        decided_at: now,
-        updated_at: now,
-      })
-      .eq("id", item.id);
+    const reviewStatus = item.target_type === "user" && action === "suspend" ? "keep_hidden" : action;
+    const reviewPayload = {
+      target_type: item.target_type,
+      target_id: item.target_id,
+      status: reviewStatus,
+      distinct_report_count: item.reportCount || item.distinct_report_count || item.reports?.length || 0,
+      decided_by: user.id,
+      decided_at: now,
+      updated_at: now,
+    };
+    const reviewWrite = item.reviewId
+      ? await supabase.from("moderation_reviews").update(reviewPayload).eq("id", item.reviewId)
+      : await supabase.from("moderation_reviews").insert(reviewPayload);
+    const reviewError = reviewWrite.error;
 
     if (reviewError) {
       setPendingId("");
@@ -125,6 +161,22 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
 
     setPendingId(`${item.id}:ai`);
     setError("");
+
+    if (!item.reviewId) {
+      const supabase = createClient();
+      const { error: insertError } = await supabase.from("moderation_reviews").insert({
+        target_type: item.target_type,
+        target_id: item.target_id,
+        status: "pending",
+        distinct_report_count: item.reportCount || item.reports?.length || 0,
+      });
+
+      if (insertError) {
+        setPendingId("");
+        setError("초안을 받기 전에 목록에 올리지 못했습니다.");
+        return;
+      }
+    }
 
     const result = await requestModerationAiDraft({
       targetType: item.target_type,
@@ -151,7 +203,7 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
       <section className="paper-sheet rounded-[1.85rem] px-8 py-12 text-center md:px-12">
         <h2 className="display text-3xl text-ink">지금은 비어 있습니다</h2>
         <p className="mx-auto mt-4 max-w-md leading-8 text-ink-soft">
-          다섯 명이 살펴 달라고 하면 이곳에 올라옵니다. 사람을 막지는 않습니다.
+          게시글, 댓글, 사용자를 살펴 달라는 기록이 이곳에 모입니다.
         </p>
       </section>
     );
@@ -174,13 +226,17 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
           return (
             <li key={item.id} className="paper-sheet rounded-[1.85rem] p-7 md:p-9">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-soft">
-                <span>{item.target_type === "comment" ? "댓글" : "글"}</span>
+                <span>{typeLabel(item.target_type)}</span>
                 <span aria-hidden="true">·</span>
-                <span>{authorLabel(item.author)}</span>
+                <span>{item.inboxStatus === "done" ? "처리됨" : "대기"}</span>
                 <span aria-hidden="true">·</span>
-                <span>살펴 달라는 이 {item.distinct_report_count}명</span>
+                <span>신고 {item.reportCount || item.reports?.length || 0}</span>
                 <span aria-hidden="true">·</span>
-                <time dateTime={item.updated_at}>{formatDate(item.updated_at)}</time>
+                <span>신고한 이 {item.reporterCount || item.distinct_report_count || 0}</span>
+                <span aria-hidden="true">·</span>
+                <span>{hiddenLabel(item)}</span>
+                <span aria-hidden="true">·</span>
+                <time dateTime={item.latest_at || item.updated_at}>{formatDate(item.latest_at || item.updated_at)}</time>
               </div>
 
               <h2 className="display mt-5 text-3xl text-ink">{preview.title}</h2>
@@ -256,22 +312,44 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
               </div>
 
               <div className="mt-8 flex flex-col gap-3">
-                <p className="text-sm leading-7 text-ink-soft">
-                  사람을 막거나 하루 정지를 하지는 않습니다. 이 글만 살핍니다.
-                </p>
                 <div className="flex flex-wrap gap-2">
-                  {MODERATION_ACTIONS.map((action) => (
-                    <button
-                      key={action.value}
-                      type="button"
-                      className={action.value === "cleared" ? "btn-quiet" : "btn-ghost"}
-                      title={action.hint}
-                      onClick={() => runDecision(item, action.value)}
-                      disabled={busy}
-                    >
-                      {pendingId === `${item.id}:${action.value}` ? "담는 중…" : action.label}
-                    </button>
-                  ))}
+                  {item.target_type === "user" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn-quiet"
+                        onClick={() => runDecision(item, "cleared")}
+                        disabled={busy}
+                      >
+                        {pendingId === `${item.id}:cleared` ? "담는 중…" : "유지"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        onClick={() => runDecision(item, item.profile?.suspended ? "cleared" : "suspend")}
+                        disabled={busy}
+                      >
+                        {pendingId === `${item.id}:${item.profile?.suspended ? "cleared" : "suspend"}`
+                          ? "담는 중…"
+                          : item.profile?.suspended
+                            ? "정지 해제"
+                            : "정지"}
+                      </button>
+                    </>
+                  ) : (
+                    MODERATION_ACTIONS.map((action) => (
+                      <button
+                        key={action.value}
+                        type="button"
+                        className={action.value === "cleared" ? "btn-quiet" : "btn-ghost"}
+                        title={action.hint}
+                        onClick={() => runDecision(item, action.value)}
+                        disabled={busy}
+                      >
+                        {pendingId === `${item.id}:${action.value}` ? "담는 중…" : action.label}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             </li>
@@ -282,10 +360,30 @@ export default function AdminReportsList({ items = [], aiConfigured = false }) {
   );
 }
 
+function typeLabel(type) {
+  if (type === "comment") {
+    return "댓글";
+  }
+
+  if (type === "user") {
+    return "사용자";
+  }
+
+  return "게시글";
+}
+
+function hiddenLabel(item) {
+  if (item.target_type === "user") {
+    return item.profile?.suspended ? "정지됨" : "활동 중";
+  }
+
+  return item.hidden ? "자동 숨김" : "보임";
+}
+
 function previewOf(item) {
   if (item.post) {
     return {
-      title: item.post.title || "글",
+      title: item.post.title || "게시글",
       body: clip(item.post.body),
     };
   }
@@ -297,8 +395,15 @@ function previewOf(item) {
     };
   }
 
+  if (item.profile) {
+    return {
+      title: authorLabel(item.profile),
+      body: clip(item.profile.bio || "한 줄 소개가 없습니다."),
+    };
+  }
+
   return {
-    title: item.target_type === "comment" ? "댓글" : "글",
+    title: typeLabel(item.target_type),
     body: "미리보기를 읽지 못했습니다.",
   };
 }
@@ -310,6 +415,10 @@ function hrefOf(item) {
 
   if (item.comment?.post_id) {
     return `/hobbies/post/${item.comment.post_id}#comments`;
+  }
+
+  if (item.profile?.id) {
+    return `/profile/${item.profile.id}`;
   }
 
   return "";
