@@ -105,6 +105,20 @@ export function looksLikeProfileLink(value) {
   return "";
 }
 
+export function grantedFriendIds(rows) {
+  return (Array.isArray(rows) ? rows : [])
+    .map((row) => (typeof row?.friend_id === "string" ? row.friend_id : ""))
+    .filter(Boolean);
+}
+
+export function hasDiaryGrant(rows, friendId) {
+  if (!friendId) {
+    return false;
+  }
+
+  return grantedFriendIds(rows).includes(friendId);
+}
+
 export function friendDiaryHref(profileId) {
   return `/friends/${profileId}`;
 }

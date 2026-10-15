@@ -325,7 +325,7 @@ export default function DiaryBoard() {
           <h2 className="display mt-8 text-4xl text-ink md:text-5xl">먼저 들어와 주세요</h2>
           <p className="mx-auto mt-6 max-w-md text-lg leading-9 text-ink-soft">
             일기는 들어와 있는 분만 보고 남길 수 있습니다. 적어 둔 글은 기본적으로
-            나만 보며, 친구에게 나눌 날은 따로 고를 수 있습니다.
+            나만 보기이고, 친구 공개로 나눌 날을 따로 고를 수 있습니다.
           </p>
           <Link href={loginHref("/diary")} className="btn-quiet mt-10">
             로그인
@@ -404,9 +404,9 @@ function Intro() {
       <p className="kicker rise-in">기본적으로 비공개</p>
       <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-6xl">나의 일기</h1>
       <p className="rise-in rise-in-2 mt-6 max-w-xl text-lg leading-9 text-ink-soft">
-        날짜를 눌러 그날을 읽고 남길 수 있습니다. 적어 둔 글은 나만 보며,{" "}
-        <strong className="font-medium text-ink">친구에게 공개</strong>를 켠 날만
-        받아 둔 친구에게 열립니다.
+        날짜를 눌러 그날을 읽고 남길 수 있습니다. 기본은 나만 보기이고,{" "}
+        <strong className="font-medium text-ink">친구 공개</strong>로 고른 날은
+        일기 공유를 허용한 친구에게만 열립니다.
       </p>
     </div>
   );
@@ -486,21 +486,33 @@ function DayPanel({
           {body.trim().length}/{DIARY_BODY_MAX}
         </p>
 
-        <label className="share-check mt-6" htmlFor="diary-share">
-          <input
-            id="diary-share"
-            type="checkbox"
-            checked={shared}
-            onChange={(event) => onSharedChange(event.target.checked)}
-            disabled={busy}
-          />
-          <span>
-            <span className="block text-sm text-ink">친구에게 공개</span>
+        <fieldset className="diary-visibility mt-6" disabled={busy}>
+          <legend className="text-sm text-ink-soft">누가 볼 수 있는지</legend>
+          <label className={`diary-visibility-option${!shared ? " is-on" : ""}`}>
+            <input
+              type="radio"
+              name="diary-visibility"
+              value="private"
+              checked={!shared}
+              onChange={() => onSharedChange(false)}
+            />
+            <span className="block text-sm text-ink">나만 보기 (비공개)</span>
+            <span className="mt-1 block text-sm leading-6 text-ink-soft">이 날은 나만 읽습니다.</span>
+          </label>
+          <label className={`diary-visibility-option${shared ? " is-on" : ""}`}>
+            <input
+              type="radio"
+              name="diary-visibility"
+              value="friends"
+              checked={shared}
+              onChange={() => onSharedChange(true)}
+            />
+            <span className="block text-sm text-ink">친구 공개</span>
             <span className="mt-1 block text-sm leading-6 text-ink-soft">
-              켜 둔 날만 받아 둔 친구가 읽을 수 있습니다. 기본은 나만 봅니다.
+              일기 공유를 허용한 친구만 이 날을 읽습니다.
             </span>
-          </span>
-        </label>
+          </label>
+        </fieldset>
 
         {error ? (
           <p className="mt-4 text-sm text-clay" role="alert">

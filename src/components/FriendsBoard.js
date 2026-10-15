@@ -17,6 +17,7 @@ import {
   displayLabel,
   friendDiaryHref,
   friendshipWith,
+  grantedFriendIds,
   looksLikeProfileLink,
   otherPartyId,
   profileSearchPattern,
@@ -32,6 +33,7 @@ export default function FriendsBoard() {
   const configured = isSupabaseConfigured();
   const [user, setUser] = useState(() => (configured ? undefined : null));
   const [friendships, setFriendships] = useState([]);
+  const [grantedIds, setGrantedIds] = useState([]);
   const [blockedIds, setBlockedIds] = useState([]);
   const [profiles, setProfiles] = useState({});
   const [query, setQuery] = useState("");
@@ -73,6 +75,21 @@ export default function FriendsBoard() {
       }
       return next;
     });
+  }, []);
+
+  const loadGrants = useCallback(async (userId) => {
+    const supabase = createClient();
+    const { data, error: loadError } = await supabase
+      .from("diary_share_grants")
+      .select("friend_id")
+      .eq("owner_id", userId);
+
+    if (loadError) {
+      setGrantedIds([]);
+      return;
+    }
+
+    setGrantedIds(grantedFriendIds(data));
   }, []);
 
   const loadBlocks = useCallback(async (userId) => {
@@ -144,6 +161,7 @@ export default function FriendsBoard() {
       if (nextUser) {
         loadFriendships(nextUser.id);
         loadBlocks(nextUser.id);
+        loadGrants(nextUser.id);
       }
     });
 
@@ -156,17 +174,19 @@ export default function FriendsBoard() {
       if (!nextUser) {
         setFriendships([]);
         setBlockedIds([]);
+        setGrantedIds([]);
         setLoaded(false);
       } else {
         loadFriendships(nextUser.id);
         loadBlocks(nextUser.id);
+        loadGrants(nextUser.id);
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [configured, loadBlocks, loadFriendships]);
+  }, [configured, loadBlocks, loadFriendships, loadGrants]);
 
   useEffect(() => {
     const term = sanitizeSearchTerm(query);
@@ -239,6 +259,7 @@ export default function FriendsBoard() {
     await work(supabase, currentUser);
     await loadFriendships(currentUser.id);
     await loadBlocks(currentUser.id);
+    await loadGrants(currentUser.id);
   }
 
   async function requestFriend(targetId) {
@@ -399,6 +420,38 @@ export default function FriendsBoard() {
       }
 
       setNotice("친구를 거두었습니다.");
+    });
+
+    setPending("");
+  }
+
+  async function toggleDiaryGrant(friendId, granted) {
+    if (!friendId) {
+      return;
+    }
+
+    setPending(`grant:${friendId}`);
+    setError("");
+    setNotice("");
+
+    await withUser(async (supabase, currentUser) => {
+      const change = granted
+        ? await supabase
+            .from("diary_share_grants")
+            .delete()
+            .eq("owner_id", currentUser.id)
+            .eq("friend_id", friendId)
+        : await supabase.from("diary_share_grants").insert({
+            owner_id: currentUser.id,
+            friend_id: friendId,
+          });
+
+      if (change.error) {
+        setError("일기 공유를 바꾸지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
+        return;
+      }
+
+      setNotice(granted ? "이 친구의 일기 공유를 거두었습니다." : "이 친구에게 일기를 열었습니다.");
     });
 
     setPending("");
@@ -577,6 +630,8 @@ export default function FriendsBoard() {
               friendship={friendship}
               blocked={blockedIds.includes(otherPartyId(friendship, user.id))}
               pending={pending}
+              granted={grantedIds.includes(otherPartyId(friendship, user.id))}
+              onToggleGrant={toggleDiaryGrant}
               onUnfriend={unfriend}
               onBlocked={() => {
                 loadFriendships(user.id);
@@ -596,8 +651,8 @@ function Intro() {
       <p className="kicker rise-in">가까운 이</p>
       <h1 className="display rise-in rise-in-1 mt-5 text-5xl text-ink md:text-7xl">친구</h1>
       <p className="rise-in rise-in-2 mt-8 max-w-md text-lg leading-9 text-ink-soft">
-        요청을 주고받은 뒤에, 친구가 체크한 날의 일기만 읽을 수 있습니다. 혼자
-        보는 날은 열리지 않습니다.
+        친구가 되어도 일기는 저절로 열리지 않습니다. 가까운 친구마다 일기 공유를
+        허용하면, 그 친구가 친구 공개로 남긴 날만 읽을 수 있습니다.
       </p>
     </div>
   );
@@ -656,6 +711,8 @@ function FriendRow({
   friendship,
   blocked = false,
   pending,
+  granted = false,
+  onToggleGrant,
   onRequest,
   onAccept,
   onDecline,
@@ -681,6 +738,17 @@ function FriendRow({
       <div className={relation === "accepted" ? "friend-polaroid-actions" : "flex flex-wrap gap-2"}>
         {relation === "accepted" ? (
           <>
+            {!blocked && otherId ? (
+              <button
+                type="button"
+                className={`diary-grant${granted ? " is-on" : ""}`}
+                aria-pressed={granted}
+                onClick={() => onToggleGrant?.(otherId, granted)}
+                disabled={busy}
+              >
+                {pending === `grant:${otherId}` ? "담는 중…" : "일기 공유 허용"}
+              </button>
+            ) : null}
             {!blocked && otherId ? (
               <Link href={friendDiaryHref(otherId)} className="friend-primary-link">
                 공유 일기 보기
@@ -720,7 +788,7 @@ function FriendRow({
         {!blocked && relation === "outgoing" ? (
           <button
             type="button"
-            className="btn-ghost !min-h-9 !px-4 text-sm"
+            className="btn-ghost"
             onClick={() => onCancel(friendship)}
             disabled={busy}
           >
@@ -731,7 +799,7 @@ function FriendRow({
         (relation === "none" || relation === "declined_by_me" || relation === "declined_by_them") ? (
           <button
             type="button"
-            className="btn-quiet !min-h-9 !px-4 text-sm"
+            className="btn-quiet"
             onClick={onRequest}
             disabled={busy}
           >

@@ -168,7 +168,7 @@ async function AuthorPosts({ authorId }) {
       <div className="section-rule">
         <span>남긴 글</span>
       </div>
-      <ol className="mt-10 grid gap-6 lg:grid-cols-2">
+      <ol className="ruled-sheet mt-8">
         {posts.map((post, index) => (
           <li key={post.id}>
             <HobbyPostCard post={post} index={index} />

@@ -98,7 +98,7 @@ function BlockButton({
   const label = pending ? (isBlocked ? "푸는 중…" : "차단하는 중…") : isBlocked ? "차단 해제" : "차단하기";
   const className =
     appearance === "button"
-      ? "btn-ghost !min-h-9 !px-4 text-sm disabled:opacity-60"
+      ? "btn-ghost disabled:opacity-60"
       : appearance === "item"
         ? "account-menu-item disabled:opacity-60"
         : "text-sm text-ink-soft underline-offset-8 transition-colors duration-500 hover:text-sage-deep hover:underline disabled:opacity-50";

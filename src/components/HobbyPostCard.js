@@ -19,7 +19,6 @@ export default function HobbyPostCard({ post, index = 0, layout = "row", highlig
 
     return (
       <article className="post-row">
-        {post.hidden_at ? <HiddenNotice className="mb-2" /> : null}
         <div className="md:flex md:items-baseline md:justify-between md:gap-4">
           <h3 className="min-w-0 text-lg leading-8 text-ink">
             <Link href={`/hobbies/post/${post.id}`} className="post-row-title hover:text-sage-deep">
@@ -35,6 +34,7 @@ export default function HobbyPostCard({ post, index = 0, layout = "row", highlig
           </time>
         </div>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft">
+          {post.hidden_at ? <HiddenNotice inline /> : null}
           <HobbyAuthorLink author={post.author} authorId={post.author_id} />
           <time dateTime={post.created_at} className="whitespace-nowrap md:hidden">
             {dateLabel}

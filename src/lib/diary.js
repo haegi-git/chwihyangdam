@@ -198,6 +198,18 @@ export function formatDiaryDate(key) {
   });
 }
 
+export function diaryVisibilityLabel(shared, { compact = false } = {}) {
+  if (compact) {
+    return shared ? "공개" : "비공개";
+  }
+
+  return shared ? "친구 공개" : "나만 보기";
+}
+
+export function diaryVisibilityAria(shared) {
+  return shared ? "친구 공개" : "나만 보기 (비공개)";
+}
+
 export function diaryWasEdited(entry) {
   if (!entry?.created_at || !entry?.updated_at) {
     return false;
