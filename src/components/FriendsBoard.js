@@ -741,7 +741,7 @@ function FriendRow({
             {!blocked && otherId ? (
               <button
                 type="button"
-                className={`diary-grant${granted ? " is-on" : ""}`}
+                className={`diary-grant cursor-pointer disabled:cursor-not-allowed${granted ? " is-on" : ""}`}
                 aria-pressed={granted}
                 onClick={() => onToggleGrant?.(otherId, granted)}
                 disabled={busy}
@@ -750,7 +750,7 @@ function FriendRow({
               </button>
             ) : null}
             {!blocked && otherId ? (
-              <Link href={friendDiaryHref(otherId)} className="friend-primary-link">
+              <Link href={friendDiaryHref(otherId)} className="friend-primary-link cursor-pointer">
                 공유 일기 보기
               </Link>
             ) : null}
@@ -871,7 +871,7 @@ function FriendMore({
     <div className="friend-more" ref={menuRef}>
       <button
         type="button"
-        className="friend-more-trigger"
+        className="friend-more-trigger cursor-pointer"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`${name} 더보기`}
@@ -888,7 +888,7 @@ function FriendMore({
           {showUnfriend ? (
             <button
               type="button"
-              className="account-menu-item"
+              className="account-menu-item cursor-pointer disabled:cursor-not-allowed"
               role="menuitem"
               onClick={() => onUnfriend(friendship)}
               disabled={busy}

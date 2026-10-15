@@ -30,7 +30,7 @@ export default function SiteHeader() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className="nav-link"
+                className="nav-link cursor-pointer"
               >
                 {item.label}
               </Link>

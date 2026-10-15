@@ -33,7 +33,7 @@ export default function BoardPager({
                   {item}
                 </span>
               ) : (
-                <Link href={hrefFor(item)} className="board-pager-link">
+                <Link href={hrefFor(item)} className="board-pager-link cursor-pointer">
                   {item}
                 </Link>
               )}
@@ -57,14 +57,14 @@ function Step({ href, label, direction }) {
 
   if (!href) {
     return (
-      <span className="board-pager-link is-disabled" aria-disabled="true">
+      <span className="board-pager-link is-disabled cursor-not-allowed" aria-disabled="true">
         {content}
       </span>
     );
   }
 
   return (
-    <Link href={href} className="board-pager-link" aria-label={direction === "prev" ? "이전 페이지" : "다음 페이지"}>
+    <Link href={href} className="board-pager-link cursor-pointer" aria-label={direction === "prev" ? "이전 페이지" : "다음 페이지"}>
       {content}
     </Link>
   );

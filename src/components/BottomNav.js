@@ -23,7 +23,7 @@ export default function BottomNav() {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className="bottom-link"
+            className="bottom-link cursor-pointer"
           >
             <TabIcon name={item.icon} />
             {item.label}

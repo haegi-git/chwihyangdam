@@ -457,7 +457,7 @@ export default function HobbyPostForm({
         id="hobby-post-category"
         value={categoryId}
         onChange={(event) => setCategoryId(event.target.value)}
-        className="field-quiet mt-2 rounded-2xl px-4 py-3"
+        className="field-quiet mt-2 cursor-pointer rounded-2xl px-4 py-3 disabled:cursor-not-allowed"
         disabled={pending}
         required
       >
@@ -477,7 +477,7 @@ export default function HobbyPostForm({
         id="hobby-post-hobby"
         value={hobbyId}
         onChange={(event) => setHobbyId(event.target.value)}
-        className="field-quiet mt-2 rounded-2xl px-4 py-3"
+        className="field-quiet mt-2 cursor-pointer rounded-2xl px-4 py-3 disabled:cursor-not-allowed"
         disabled={pending}
       >
         <option value="">선택 안 함</option>

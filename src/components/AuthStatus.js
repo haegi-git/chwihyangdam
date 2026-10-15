@@ -171,24 +171,24 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
   const menuItems = (
     <>
       <p className="account-menu-label">{name}</p>
-      <Link href="/profile" className="account-menu-item" role="menuitem" onClick={closeMenu}>
+      <Link href="/profile" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
         프로필
       </Link>
       {admin ? (
         <>
           <p className="account-menu-label">관리자</p>
-          <Link href="/admin/reports" className="account-menu-item" role="menuitem" onClick={closeMenu}>
+          <Link href="/admin/reports" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
             살펴보기
           </Link>
-          <Link href="/admin/categories" className="account-menu-item" role="menuitem" onClick={closeMenu}>
+          <Link href="/admin/categories" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
             분류
           </Link>
-          <Link href="/admin/hobbies" className="account-menu-item" role="menuitem" onClick={closeMenu}>
+          <Link href="/admin/hobbies" className="account-menu-item cursor-pointer" role="menuitem" onClick={closeMenu}>
             말머리
           </Link>
         </>
       ) : null}
-      <button type="button" className="account-menu-item" role="menuitem" onClick={handleSignOut}>
+      <button type="button" className="account-menu-item cursor-pointer" role="menuitem" onClick={handleSignOut}>
         로그아웃
       </button>
     </>
@@ -202,7 +202,7 @@ export default function AuthStatus({ onNavigate, variant = "header" }) {
     <div className="account-menu" ref={menuRef}>
       <button
         type="button"
-        className="account-trigger"
+        className="account-trigger cursor-pointer"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`${name} 계정`}

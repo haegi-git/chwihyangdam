@@ -100,7 +100,7 @@ function BlockButton({
     appearance === "button"
       ? "btn-ghost disabled:opacity-60"
       : appearance === "item"
-        ? "account-menu-item disabled:opacity-60"
+        ? "account-menu-item cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
         : "text-sm text-ink-soft underline-offset-8 transition-colors duration-500 hover:text-sage-deep hover:underline disabled:opacity-50";
   const wrapClass =
     appearance === "button"
